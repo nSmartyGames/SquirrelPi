@@ -84,7 +84,7 @@ const categories = [
   { label: 'Digital Products', value: 'digital-products' },
 ]
 
-function TemplateGridCard({ template, onBuy, buying }: { template: Template; onBuy: (t: Template) => void; buying: boolean }) {
+function TemplateGridCard({ template, onBuy, onGetFree, buying }: { template: Template; onBuy: (t: Template) => void; onGetFree: (t: Template) => void; buying: boolean }) {
   const gradients: Record<string, string> = {
     professional: 'from-blue-900/30 to-indigo-900/20',
     basic: 'from-emerald-900/30 to-teal-900/20',
@@ -138,7 +138,7 @@ function TemplateGridCard({ template, onBuy, buying }: { template: Template; onB
           <Button
             size="sm"
             className="h-7 px-3 text-xs"
-            onClick={() => onBuy(template)}
+            onClick={() => template.price === 0 ? onGetFree(template) : onBuy(template)}
             disabled={buying}
           >
             {buying ? (
@@ -166,6 +166,20 @@ export default function MarketplaceContent() {
       router.replace('/marketplace')
     }
   }, [searchParams, router])
+
+  async function handleGetFree(template: Template) {
+    setBuyingId(template.template_id)
+    try {
+      const res = await fetch('/api/website/free', { method: 'POST' })
+      if (!res.ok) throw new Error(`Server error ${res.status}`)
+      const data = await res.json()
+      if (data.url) {
+        router.push(`/dashboard?website=${encodeURIComponent(data.url)}`)
+      }
+    } finally {
+      setBuyingId(null)
+    }
+  }
 
   async function handleBuy(template: Template) {
     if (template.price === 0) return
@@ -274,6 +288,7 @@ export default function MarketplaceContent() {
               key={template.template_id}
               template={template}
               onBuy={handleBuy}
+              onGetFree={handleGetFree}
               buying={buyingId === template.template_id}
             />
           ))}

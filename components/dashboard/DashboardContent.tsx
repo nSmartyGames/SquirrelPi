@@ -1,7 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { LinkButton } from '@/components/ui/link-button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -13,7 +14,11 @@ import {
   Sparkles,
   ArrowRight,
   Activity,
+  ExternalLink,
+  CheckCircle2,
+  X,
 } from 'lucide-react'
+import type { Website } from '@/types'
 
 const container = {
   hidden: { opacity: 0 },
@@ -30,11 +35,44 @@ const stats = [
 
 interface DashboardContentProps {
   userId: string
+  websites: Website[]
+  newWebsiteUrl?: string
 }
 
-export default function DashboardContent({ userId }: DashboardContentProps) {
+export default function DashboardContent({ userId, websites, newWebsiteUrl }: DashboardContentProps) {
+  const router = useRouter()
+  const [showBanner, setShowBanner] = useState(!!newWebsiteUrl)
+
+  function dismissBanner() {
+    setShowBanner(false)
+    router.replace('/dashboard')
+  }
+
   return (
     <div className="px-8 py-8 space-y-8 max-w-5xl">
+      <AnimatePresence>
+        {showBanner && newWebsiteUrl && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm"
+          >
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span className="flex-1">Your site is live!</span>
+            <a
+              href={newWebsiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 underline underline-offset-2 hover:text-emerald-300"
+            >
+              {newWebsiteUrl} <ExternalLink className="w-3 h-3" />
+            </a>
+            <button onClick={dismissBanner}><X className="w-3.5 h-3.5" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Stats */}
       <motion.div
         variants={container}
@@ -107,30 +145,59 @@ export default function DashboardContent({ userId }: DashboardContentProps) {
         </motion.div>
       </motion.div>
 
-      {/* Websites Empty State */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="rounded-2xl border border-dashed border-border p-12 text-center"
-      >
-        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-          <Globe className="w-7 h-7 text-primary" />
+      {/* Websites */}
+      {websites.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="rounded-2xl border border-dashed border-border p-12 text-center"
+        >
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Globe className="w-7 h-7 text-primary" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">No websites yet</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
+            Create your first website by choosing a template from the marketplace or using the AI builder.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <LinkButton href="/marketplace">
+              <Plus className="w-4 h-4 mr-2" />
+              New Website
+            </LinkButton>
+          </div>
+        </motion.div>
+      ) : (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Your Websites</h2>
+          {websites.map((site, i) => (
+            <motion.div
+              key={site.website_id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="rounded-xl border border-border bg-card p-4 flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <Globe className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{site.domain}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(site.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">Live</Badge>
+              {site.domain && (
+                <a href={site.domain} target="_blank" rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+            </motion.div>
+          ))}
         </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">No websites yet</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
-          Create your first website by choosing a template from the marketplace or using the AI builder.
-        </p>
-        <div className="flex items-center justify-center gap-3">
-          <LinkButton href="/marketplace">
-            <Plus className="w-4 h-4 mr-2" />
-            New Website
-          </LinkButton>
-          <LinkButton href="/templates/2d" variant="ghost">
-            Browse Templates
-          </LinkButton>
-        </div>
-      </motion.div>
+      )}
 
       {/* Recent Activity */}
       <motion.div

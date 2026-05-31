@@ -1,5 +1,7 @@
 'use server'
 
+import { createHash } from 'crypto'
+
 const CF_BASE = 'https://api.cloudflare.com/client/v4'
 
 interface CFDeployment {
@@ -61,24 +63,36 @@ export async function deployToPages(
   const existing = await getPagesProject(projectName)
   if (!existing) await createPagesProject(projectName)
 
-  // Build minimal HTML site
   const indexHtml = htmlContent || buildDefaultPage(siteName)
-  const formData = new FormData()
-  formData.append('branch', 'main')
-  formData.append(
-    'manifest',
-    JSON.stringify({ '/index.html': crypto.randomUUID() })
-  )
+  const fileHash = createHash('sha256').update(indexHtml).digest('hex')
+  const boundary = `----CFBoundary${Date.now()}`
+  const CRLF = '\r\n'
 
-  const fileBlob = new Blob([indexHtml], { type: 'text/html' })
-  formData.append('/index.html', fileBlob, 'index.html')
+  const manifestJson = JSON.stringify({ 'index.html': fileHash })
+
+  const body = [
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="manifest"',
+    '',
+    manifestJson,
+    `--${boundary}`,
+    `Content-Disposition: form-data; name="${fileHash}"; filename="index.html"`,
+    'Content-Type: text/html',
+    '',
+    indexHtml,
+    `--${boundary}--`,
+    '',
+  ].join(CRLF)
 
   const res = await fetch(
     `${CF_BASE}/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${projectName}/deployments`,
     {
       method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
-      body: formData,
+      headers: {
+        Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      },
+      body,
     }
   )
 
@@ -86,9 +100,8 @@ export async function deployToPages(
   if (!data.success) throw new Error(data.errors?.[0]?.message || 'Deployment failed')
 
   const deployment: CFDeployment = data.result
-  const url = deployment.url || `https://${projectName}.pages.dev`
 
-  return { url, deploymentId: deployment.id }
+  return { url: `https://${projectName}.pages.dev`, deploymentId: deployment.id }
 }
 
 export async function getDeployments(projectName: string): Promise<CFDeployment[]> {

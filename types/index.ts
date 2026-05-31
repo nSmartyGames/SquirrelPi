@@ -2,7 +2,7 @@ export interface User {
   user_id: string
   email: string
   name: string
-  membership_status: 'active' | 'inactive' | 'trial'
+  membership_status: 'active' | 'none' | 'cancelled'
   created_at: string
   stripe_customer_id?: string
 }
@@ -30,9 +30,11 @@ export interface Website {
   website_id: string
   owner_id: string
   template_id: string
+  slug?: string
   domain?: string
-  hosting_status: 'offline' | 'deploying' | 'live'
-  publish_status: 'draft' | 'published'
+  html_content?: string
+  hosting_status: 'none' | 'pending' | 'active'
+  publish_status: 'draft' | 'published' | 'unpublished'
   created_at: string
 }
 

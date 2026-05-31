@@ -16,7 +16,7 @@ export default async function PurchasesPage() {
     await createUser({
       email,
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      membership_status: 'inactive',
+      membership_status: 'none',
       created_at: new Date().toISOString(),
       stripe_customer_id: '',
     })
