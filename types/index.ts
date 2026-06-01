@@ -16,6 +16,7 @@ export interface Template {
   price: number
   description: string
   published: boolean
+  bundle_html?: string
 }
 
 export interface Purchase {

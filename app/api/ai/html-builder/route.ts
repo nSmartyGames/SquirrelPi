@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getMembershipByUser } from '@/lib/airtable/memberships'
+import base, { Tables } from '@/lib/airtable/client'
+
+const FREE_PROMPT_LIMIT = 10
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -61,6 +65,25 @@ export async function POST(request: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const membership = await getMembershipByUser(userId).catch(() => null)
+  const isPro = membership?.status === 'active'
+
+  let promptsUsed = 0
+  if (!isPro) {
+    const records = await base()(Tables.AI_PROJECTS)
+      .select({ filterByFormula: `{owner_id}='${userId}'`, fields: ['owner_id'] })
+      .all()
+      .catch(() => [])
+    promptsUsed = records.length
+
+    if (promptsUsed >= FREE_PROMPT_LIMIT) {
+      return NextResponse.json(
+        { error: 'Prompt limit reached. Upgrade to Pro for unlimited prompts.', limitReached: true },
+        { status: 403 }
+      )
+    }
+  }
+
   const { messages } = await request.json() as { messages: ClaudeMsg[] }
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: 'Missing messages' }, { status: 400 })
@@ -74,12 +97,23 @@ export async function POST(request: NextRequest) {
   })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-
   const html = raw
     .replace(/^```html\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim()
 
-  return NextResponse.json({ html })
+  const lastUserMsg = messages.filter(m => m.role === 'user').at(-1)?.content ?? ''
+  await base()(Tables.AI_PROJECTS).create({
+    owner_id: userId,
+    prompt: lastUserMsg.slice(0, 500),
+    generated_content: html.slice(0, 100000),
+    created_at: new Date().toISOString(),
+  } as Record<string, unknown>).catch(() => {})
+
+  return NextResponse.json({
+    html,
+    promptsUsed: isPro ? null : promptsUsed + 1,
+    promptsRemaining: isPro ? null : FREE_PROMPT_LIMIT - (promptsUsed + 1),
+  })
 }

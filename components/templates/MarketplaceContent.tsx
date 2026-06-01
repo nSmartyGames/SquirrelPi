@@ -7,69 +7,28 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Search, Layout, Box, Package, Loader2, CheckCircle2, X, ShoppingCart } from 'lucide-react'
 import type { Template } from '@/types'
+import { STARTER_TEMPLATES } from '@/lib/templates/starters'
 
-const DEMO_TEMPLATES: Template[] = [
-  {
-    template_id: '1',
-    title: 'Minimal Agency',
-    category: 'professional',
-    type: '2d',
-    preview_image: '',
-    price: 13,
-    description: 'Clean, professional agency site with smooth animations',
-    published: true,
-  },
-  {
-    template_id: '2',
-    title: 'Portfolio Pro',
-    category: 'professional',
-    type: '2d',
-    preview_image: '',
-    price: 13,
-    description: 'Showcase your work with a stunning portfolio layout',
-    published: true,
-  },
-  {
-    template_id: '3',
-    title: 'Basic Starter',
-    category: 'basic',
-    type: '2d',
-    preview_image: '',
-    price: 0,
-    description: 'Perfect starting point for any small website',
-    published: true,
-  },
-  {
-    template_id: '4',
-    title: 'Digital Store',
-    category: 'digital-products',
-    type: '2d',
-    preview_image: '',
-    price: 13,
-    description: 'Sell digital products with a conversion-optimized layout',
-    published: true,
-  },
-  {
-    template_id: '5',
-    title: '3D Portfolio',
-    category: 'professional',
-    type: '3d',
-    preview_image: '',
-    price: 13,
-    description: 'Immersive Three.js portfolio with stunning 3D effects',
-    published: true,
-  },
-  {
-    template_id: '6',
-    title: '3D Product Showcase',
-    category: 'digital-products',
-    type: '3d',
-    preview_image: '',
-    price: 13,
-    description: 'Show off your products with interactive 3D models',
-    published: true,
-  },
-]
+const PALETTE_EMOJI: Record<string, string> = {
+  dark: '🖤',
+  ocean: '🌊',
+  sunset: '🔥',
+  purple: '💜',
+  rose: '🌸',
+  light: '☀️',
+}
+
+const TEMPLATES: Template[] = STARTER_TEMPLATES.map(t => ({
+  template_id: t.id,
+  title: t.title,
+  category: t.category,
+  type: t.type,
+  preview_image: PALETTE_EMOJI[t.palette] ?? '🖥️',
+  price: 0,
+  description: t.description,
+  published: true,
+  bundle_html: t.bundle_html,
+}))
 
 const filters = [
   { label: 'All', value: 'all', icon: Package },
@@ -111,8 +70,8 @@ function TemplateGridCard({ template, onBuy, buying }: { template: Template; onB
           <div className={`text-xs uppercase tracking-wider font-medium ${accents[template.category]}`}>
             {template.category.replace('-', ' ')}
           </div>
-          <div className="text-3xl mt-2">
-            {template.type === '3d' ? '🌐' : '🖥️'}
+          <div className="text-4xl mt-2">
+            {template.preview_image || (template.type === '3d' ? '🌐' : '🖥️')}
           </div>
         </div>
       </div>
@@ -126,12 +85,15 @@ function TemplateGridCard({ template, onBuy, buying }: { template: Template; onB
           <Button
             size="sm"
             className="h-7 px-3 text-xs"
-            onClick={() => template.price === 0 ? router.push('/builder') : onBuy(template)}
+            onClick={() => template.price === 0
+              ? router.push(`/builder?templateId=${template.template_id}`)
+              : onBuy(template)
+            }
             disabled={buying}
           >
             {buying ? (
               <Loader2 className="w-3 h-3 animate-spin" />
-            ) : template.price === 0 ? 'Free' : (
+            ) : template.price === 0 ? 'Open in Builder' : (
               <>
                 <ShoppingCart className="w-3 h-3 mr-1" />
                 Buy — ${template.price}
@@ -200,7 +162,7 @@ export default function MarketplaceContent() {
     }
   }
 
-  const filtered = DEMO_TEMPLATES.filter((t) => {
+  const filtered = TEMPLATES.filter((t) => {
     if (typeFilter !== 'all' && t.type !== typeFilter) return false
     if (categoryFilter !== 'all' && t.category !== categoryFilter) return false
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false

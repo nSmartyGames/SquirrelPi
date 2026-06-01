@@ -13,6 +13,7 @@ function mapTemplate(record: AirtableRecord): Template {
     price: record.get('price') as number,
     description: record.get('description') as string,
     published: record.get('published') as boolean,
+    bundle_html: (record.get('bundle_html') as string) || undefined,
   }
 }
 

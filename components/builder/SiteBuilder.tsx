@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Palette, Type, Maximize2, Plus, Pencil, ExternalLink, Mail, X,
-  Send, Zap, ChevronDown, ChevronUp, Smartphone, Monitor,
+  Send, Zap, ChevronDown, ChevronUp, Smartphone, Monitor, Crown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
+const FREE_PROMPT_LIMIT = 10
 
 interface PageItem {
   id: string
@@ -51,6 +53,12 @@ interface ClaudeMsg {
   content: string
 }
 
+interface SiteBuilderProps {
+  initialHtml?: string
+  isPro?: boolean
+  promptsUsed?: number
+}
+
 const palettes: ColorPalette[] = [
   { id: 'dark',   label: 'Dark',   bg: '#0a0a0f', text: '#f0f0f0', accent: '#4ade80', border: '#1a2a1a', swatch: '#4ade80' },
   { id: 'ocean',  label: 'Ocean',  bg: '#0c1a2e', text: '#e2f0f9', accent: '#38bdf8', border: '#1e3a5f', swatch: '#38bdf8' },
@@ -62,7 +70,7 @@ const palettes: ColorPalette[] = [
 
 type ModalType = 'title' | 'menu' | 'button' | null
 
-export default function SiteBuilder() {
+export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
   const [site, setSite] = useState<SiteState>({
     title: 'My Website',
     palette: palettes[0],
@@ -80,13 +88,17 @@ export default function SiteBuilder() {
   const [newTitle, setNewTitle] = useState(site.title)
 
   // AI console
-  const [generatedHtml, setGeneratedHtml] = useState('')
+  const [generatedHtml, setGeneratedHtml] = useState(initialHtml ?? '')
   const [consoleOpen, setConsoleOpen] = useState(true)
   const [displayMsgs, setDisplayMsgs] = useState<DisplayMsg[]>([])
   const [claudeHistory, setClaudeHistory] = useState<ClaudeMsg[]>([])
   const [consoleInput, setConsoleInput] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [previewMode, setPreviewMode] = useState<'phone' | 'web'>('phone')
+  const [previewMode, setPreviewMode] = useState<'phone' | 'web'>(initialHtml ? 'web' : 'phone')
+
+  // Prompt tracking
+  const [localPromptsUsed, setLocalPromptsUsed] = useState(initialPromptsUsed)
+  const [limitReached, setLimitReached] = useState(!isPro && initialPromptsUsed >= FREE_PROMPT_LIMIT)
 
   // Deploy
   const [deploying, setDeploying] = useState(false)
@@ -99,6 +111,13 @@ export default function SiteBuilder() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [displayMsgs, consoleOpen])
+
+  // Load initial template HTML into history so Claude knows the starting point
+  useEffect(() => {
+    if (initialHtml) {
+      setClaudeHistory([{ role: 'assistant', content: initialHtml }])
+    }
+  }, [initialHtml])
 
   function openModal(type: ModalType) {
     setFormTitle('')
@@ -146,6 +165,8 @@ export default function SiteBuilder() {
       return
     }
 
+    if (limitReached) return
+
     setConsoleInput('')
     setDisplayMsgs(prev => [...prev, { id: crypto.randomUUID(), role: 'user', content: input }])
     const newHistory: ClaudeMsg[] = [...claudeHistory, { role: 'user', content: input }]
@@ -159,10 +180,24 @@ export default function SiteBuilder() {
       })
       const data = await res.json()
 
+      if (data.limitReached) {
+        setLimitReached(true)
+        setDisplayMsgs(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: 'Prompt limit reached. Upgrade to Pro for unlimited prompts.',
+        }])
+        return
+      }
+
       if (data.html) {
         setGeneratedHtml(data.html)
         setPreviewMode('web')
         setClaudeHistory([...newHistory, { role: 'assistant', content: data.html }])
+        if (!isPro && data.promptsUsed != null) {
+          setLocalPromptsUsed(data.promptsUsed)
+          if (data.promptsRemaining <= 0) setLimitReached(true)
+        }
         setDisplayMsgs(prev => [...prev, {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -222,6 +257,9 @@ export default function SiteBuilder() {
     const url = site.siteUrl || (typeof window !== 'undefined' ? window.location.href : '')
     return `mailto:lucian.virtic@hotmail.com?subject=Handed%20to%20me&body=${encodeURIComponent(url)}`
   }
+
+  const promptsRemaining = FREE_PROMPT_LIMIT - localPromptsUsed
+  const promptWarning = !isPro && promptsRemaining <= 3 && !limitReached
 
   return (
     <div className="flex flex-col h-full">
@@ -484,21 +522,41 @@ export default function SiteBuilder() {
             <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Claude Console</span>
             <span className="text-[10px] text-muted-foreground/40">· /clean to reset</span>
           </div>
-          <button
-            onClick={() => setConsoleOpen(o => !o)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {consoleOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-3">
+            {isPro ? (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <Crown className="w-3 h-3 text-amber-400" />
+                <span className="text-[10px] font-semibold text-amber-400">Pro · Unlimited</span>
+              </div>
+            ) : (
+              <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
+                limitReached
+                  ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                  : promptWarning
+                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                  : 'bg-muted/30 border-border text-muted-foreground'
+              }`}>
+                <span>{localPromptsUsed} / {FREE_PROMPT_LIMIT} prompts</span>
+              </div>
+            )}
+            <button
+              onClick={() => setConsoleOpen(o => !o)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {consoleOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {consoleOpen && (
           <>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
-              {displayMsgs.length === 0 && (
+              {displayMsgs.length === 0 && !limitReached && (
                 <p className="text-[11px] text-muted-foreground/40 text-center pt-2">
-                  Describe your page. e.g. "Layout: top 15% header with menu, two content rows, bottom 15% footer"
+                  {initialHtml
+                    ? 'Theme loaded — describe changes or ask Claude to modify it.'
+                    : 'Describe your page. e.g. "Layout: top 15% header with menu, two content rows, bottom 15% footer"'}
                 </p>
               )}
               {displayMsgs.map(msg => (
@@ -528,25 +586,41 @@ export default function SiteBuilder() {
 
             {/* Input row */}
             <div className="px-4 pb-3 pt-1 shrink-0">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={consoleInput}
-                  onChange={e => setConsoleInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && sendConsoleMsg()}
-                  placeholder="Describe your page or a change… (/clean to reset)"
-                  disabled={generating}
-                  className="flex-1 px-3 py-2 rounded-lg bg-background/60 border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
-                />
-                <Button
-                  size="sm"
-                  onClick={sendConsoleMsg}
-                  disabled={generating || !consoleInput.trim()}
-                  className="px-3"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </Button>
-              </div>
+              {limitReached ? (
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-3.5 h-3.5 text-red-400" />
+                    <span className="text-[12px] text-red-400 font-medium">Free limit reached ({FREE_PROMPT_LIMIT} prompts)</span>
+                  </div>
+                  <a
+                    href="/account"
+                    className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+                  >
+                    <Crown className="w-3 h-3" />
+                    Upgrade to Pro
+                  </a>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={consoleInput}
+                    onChange={e => setConsoleInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && sendConsoleMsg()}
+                    placeholder="Describe your page or a change… (/clean to reset)"
+                    disabled={generating}
+                    className="flex-1 px-3 py-2 rounded-lg bg-background/60 border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={sendConsoleMsg}
+                    disabled={generating || !consoleInput.trim()}
+                    className="px-3"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         )}
