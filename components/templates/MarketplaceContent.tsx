@@ -159,6 +159,7 @@ export default function MarketplaceContent() {
   const [search, setSearch] = useState('')
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
     if (searchParams.get('success') === 'template') {
@@ -169,13 +170,20 @@ export default function MarketplaceContent() {
 
   async function handleGetFree(template: Template) {
     setBuyingId(template.template_id)
+    setErrorMsg(null)
     try {
       const res = await fetch('/api/website/free', { method: 'POST' })
-      if (!res.ok) throw new Error(`Server error ${res.status}`)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErrorMsg(data.error || `Failed to create website (${res.status})`)
+        return
+      }
       const data = await res.json()
       if (data.url) {
         router.push(`/dashboard?website=${encodeURIComponent(data.url)}`)
       }
+    } catch {
+      setErrorMsg('Something went wrong. Please try again.')
     } finally {
       setBuyingId(null)
     }
@@ -219,6 +227,18 @@ export default function MarketplaceContent() {
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span className="flex-1">Purchase successful! Template is now available in your dashboard.</span>
             <button onClick={() => setShowSuccess(false)}><X className="w-3.5 h-3.5" /></button>
+          </motion.div>
+        )}
+        {errorMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+          >
+            <X className="w-4 h-4 shrink-0" />
+            <span className="flex-1">{errorMsg}</span>
+            <button onClick={() => setErrorMsg(null)}><X className="w-3.5 h-3.5" /></button>
           </motion.div>
         )}
       </AnimatePresence>

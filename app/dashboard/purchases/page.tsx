@@ -11,18 +11,20 @@ export default async function PurchasesPage() {
   const email = user.emailAddresses[0]?.emailAddress || ''
 
   // Upsert user in Airtable
-  const existing = await getUserByEmail(email)
-  if (!existing) {
-    await createUser({
-      email,
-      name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      membership_status: 'none',
-      created_at: new Date().toISOString(),
-      stripe_customer_id: '',
-    })
-  }
+  try {
+    const existing = await getUserByEmail(email)
+    if (!existing) {
+      await createUser({
+        email,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        membership_status: 'none',
+        created_at: new Date().toISOString(),
+        stripe_customer_id: '',
+      })
+    }
+  } catch {}
 
-  const purchases = await getPurchasesByUser(user.id)
+  const purchases = await getPurchasesByUser(user.id).catch(() => [])
 
   return (
     <>

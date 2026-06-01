@@ -10,7 +10,7 @@ export default async function DashboardPage({
 }) {
   const user = await currentUser()
   const params = await searchParams
-  const websites = user ? await getWebsitesByUser(user.id) : []
+  const websites = user ? await getWebsitesByUser(user.id).catch(() => []) : []
 
   return (
     <>

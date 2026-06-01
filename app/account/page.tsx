@@ -5,7 +5,7 @@ import { getMembershipByUser } from '@/lib/airtable/memberships'
 
 export default async function AccountPage() {
   const user = await currentUser()
-  const membership = user ? await getMembershipByUser(user.id) : null
+  const membership = user ? await getMembershipByUser(user.id).catch(() => null) : null
 
   return (
     <>
