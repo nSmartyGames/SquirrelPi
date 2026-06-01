@@ -24,8 +24,8 @@ const navItems = [
   { label: '2D Templates', href: '/templates/2d', icon: Layout, accent: false },
   { label: '3D Templates', href: '/templates/3d', icon: Box, accent: false },
   { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag, accent: false },
-  { label: 'My Websites', href: '/dashboard', icon: Globe, accent: false },
-  { label: 'Purchases', href: '/dashboard/purchases', icon: ShoppingCart, accent: false },
+  { label: 'Dashboard', href: '/dashboard', icon: Globe, accent: false },
+  { label: 'My Stack', href: '/dashboard/purchases', icon: ShoppingCart, accent: false },
   { label: 'Members', href: '/members', icon: Star, accent: 'gold' as const },
   { label: 'Account', href: '/account', icon: User, accent: false },
   { label: 'Admin', href: '/admin', icon: Shield, accent: 'red' as const },
@@ -52,6 +52,8 @@ export default function Sidebar() {
           const active =
             item.href === '/'
               ? pathname === '/'
+              : item.href === '/dashboard'
+              ? pathname === '/dashboard'
               : pathname.startsWith(item.href)
           const Icon = item.icon
           return (

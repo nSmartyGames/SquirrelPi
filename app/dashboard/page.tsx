@@ -15,7 +15,7 @@ export default async function DashboardPage({
   return (
     <>
       <PageHeader
-        title="My Websites"
+        title="Dashboard"
         subtitle={`Welcome back, ${user?.firstName || 'there'}`}
       />
       <DashboardContent

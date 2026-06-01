@@ -14,7 +14,7 @@ const steps = [
   { id: 5, label: 'Website online', icon: '🌐' },
 ]
 
-export default function GoLiveContent() {
+export default function GoLiveContent({ siteUrl }: { siteUrl?: string }) {
   const [deploying, setDeploying] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [done, setDone] = useState(false)
@@ -72,10 +72,19 @@ export default function GoLiveContent() {
           >
             <CheckCircle className="w-12 h-12 text-primary" />
             <p className="text-primary font-semibold">Your website is live!</p>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Globe className="w-4 h-4" />
-              Visit Website
-            </Button>
+            {siteUrl ? (
+              <a href={siteUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Globe className="w-4 h-4" />
+                  Visit Website
+                </Button>
+              </a>
+            ) : (
+              <Button variant="outline" size="sm" className="gap-2" disabled>
+                <Globe className="w-4 h-4" />
+                Visit Website
+              </Button>
+            )}
           </motion.div>
         )}
       </motion.div>

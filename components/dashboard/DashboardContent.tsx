@@ -26,13 +26,6 @@ const container = {
 }
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
-const stats = [
-  { label: 'Websites', value: '0', icon: Globe, color: 'text-emerald-400' },
-  { label: 'Templates', value: '0', icon: ShoppingBag, color: 'text-blue-400' },
-  { label: 'AI Projects', value: '0', icon: Sparkles, color: 'text-purple-400' },
-  { label: 'Live Sites', value: '0', icon: Activity, color: 'text-orange-400' },
-]
-
 interface DashboardContentProps {
   userId: string
   websites: Website[]
@@ -40,6 +33,12 @@ interface DashboardContentProps {
 }
 
 export default function DashboardContent({ userId, websites, newWebsiteUrl }: DashboardContentProps) {
+  const stats = [
+    { label: 'Websites', value: String(websites.length), icon: Globe, color: 'text-emerald-400' },
+    { label: 'Templates', value: String(new Set(websites.map(w => w.template_id).filter(Boolean)).size), icon: ShoppingBag, color: 'text-blue-400' },
+    { label: 'AI Projects', value: '0', icon: Sparkles, color: 'text-purple-400' },
+    { label: 'Live Sites', value: String(websites.filter(w => w.hosting_status === 'active').length), icon: Activity, color: 'text-orange-400' },
+  ]
   const router = useRouter()
   const [showBanner, setShowBanner] = useState(!!newWebsiteUrl)
 

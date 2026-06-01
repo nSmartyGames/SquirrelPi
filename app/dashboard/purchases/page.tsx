@@ -2,6 +2,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import PageHeader from '@/components/layout/PageHeader'
 import PurchasesContent from '@/components/dashboard/PurchasesContent'
 import { getPurchasesByUser } from '@/lib/airtable/purchases'
+import { getWebsitesByUser } from '@/lib/airtable/websites'
 import { getUserByEmail, createUser } from '@/lib/airtable/users'
 
 export default async function PurchasesPage() {
@@ -24,15 +25,18 @@ export default async function PurchasesPage() {
     }
   } catch {}
 
-  const purchases = await getPurchasesByUser(user.id).catch(() => [])
+  const [purchases, websites] = await Promise.all([
+    getPurchasesByUser(user.id).catch(() => []),
+    getWebsitesByUser(user.id).catch(() => []),
+  ])
 
   return (
     <>
       <PageHeader
-        title="My Purchases"
+        title="My Stack"
         subtitle="Templates you own"
       />
-      <PurchasesContent purchases={purchases} />
+      <PurchasesContent purchases={purchases} websites={websites} />
     </>
   )
 }
