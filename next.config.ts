@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000'],
+      allowedOrigins: ['localhost:3000', 'squirrel-pi-nine.vercel.app'],
     },
   },
 }
