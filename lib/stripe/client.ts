@@ -1,10 +1,23 @@
 import Stripe from 'stripe'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-05-27.dahlia',
+let _stripe: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-05-27.dahlia',
+    })
+  }
+  return _stripe
+}
+
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    return getStripe()[prop as keyof Stripe]
+  },
 })
 
 export const PRICES = {
-  MEMBERSHIP: process.env.STRIPE_MEMBERSHIP_PRICE_ID!,
-  TEMPLATE: 1300, // $13.00 in cents
+  get MEMBERSHIP() { return process.env.STRIPE_MEMBERSHIP_PRICE_ID! },
+  TEMPLATE: 1300,
 }
