@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     prompt: lastUserMsg.slice(0, 500),
     generated_content: html.slice(0, 100000),
     created_at: new Date().toISOString(),
-  } as Record<string, unknown>).catch(() => {})
+  } as unknown as Partial<import('airtable').FieldSet>).catch(() => {})
 
   return NextResponse.json({
     html,
