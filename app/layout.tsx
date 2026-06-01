@@ -1,19 +1,6 @@
 import type { Metadata } from 'next'
-import { Roboto, Roboto_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
-
-const roboto = Roboto({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
-})
-
-const robotoMono = Roboto_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-  weight: ['400', '500'],
-})
 
 export const metadata: Metadata = {
   title: 'Squirrel Pi — AI Website Builder & Template Marketplace',
@@ -28,10 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        className={`${roboto.variable} ${robotoMono.variable} h-full dark`}
-      >
+      <html lang="en" className="h-full dark">
         <body className="min-h-full bg-background text-foreground antialiased">
           {children}
         </body>

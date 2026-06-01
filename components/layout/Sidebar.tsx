@@ -16,6 +16,7 @@ import {
   Squirrel,
   Star,
   Shield,
+  PenTool,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +27,7 @@ const navItems = [
   { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag, accent: false },
   { label: 'Dashboard', href: '/dashboard', icon: Globe, accent: false },
   { label: 'My Stack', href: '/dashboard/purchases', icon: ShoppingCart, accent: false },
+  { label: 'Site Builder', href: '/builder', icon: PenTool, accent: false },
   { label: 'Members', href: '/members', icon: Star, accent: 'gold' as const },
   { label: 'Account', href: '/account', icon: User, accent: false },
   { label: 'Admin', href: '/admin', icon: Shield, accent: 'red' as const },

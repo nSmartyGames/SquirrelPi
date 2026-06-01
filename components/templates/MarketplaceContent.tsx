@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, Layout, Box, Package, Loader2, CheckCircle2, X } from 'lucide-react'
+import { Search, Layout, Box, Package, Loader2, CheckCircle2, X, ShoppingCart } from 'lucide-react'
 import type { Template } from '@/types'
 
 const DEMO_TEMPLATES: Template[] = [
@@ -84,16 +84,17 @@ const categories = [
   { label: 'Digital Products', value: 'digital-products' },
 ]
 
-function TemplateGridCard({ template, onBuy, onGetFree, buying }: { template: Template; onBuy: (t: Template) => void; onGetFree: (t: Template) => void; buying: boolean }) {
+function TemplateGridCard({ template, onBuy, buying }: { template: Template; onBuy: (t: Template) => void; buying: boolean }) {
+  const router = useRouter()
   const gradients: Record<string, string> = {
     professional: 'from-blue-900/30 to-indigo-900/20',
     basic: 'from-emerald-900/30 to-teal-900/20',
     'digital-products': 'from-purple-900/30 to-pink-900/20',
   }
   const accents: Record<string, string> = {
-    professional: 'text-blue-400 border-blue-500/20',
-    basic: 'text-emerald-400 border-emerald-500/20',
-    'digital-products': 'text-purple-400 border-purple-500/20',
+    professional: 'text-blue-400',
+    basic: 'text-emerald-400',
+    'digital-products': 'text-purple-400',
   }
 
   return (
@@ -107,23 +108,13 @@ function TemplateGridCard({ template, onBuy, onGetFree, buying }: { template: Te
     >
       <div className={`aspect-[16/10] bg-gradient-to-br ${gradients[template.category]} flex items-center justify-center relative`}>
         <div className="text-center">
-          <div className={`text-xs uppercase tracking-wider font-medium ${accents[template.category].split(' ')[0]}`}>
-            {template.type.toUpperCase()} · {template.category.replace('-', ' ')}
+          <div className={`text-xs uppercase tracking-wider font-medium ${accents[template.category]}`}>
+            {template.category.replace('-', ' ')}
           </div>
           <div className="text-3xl mt-2">
             {template.type === '3d' ? '🌐' : '🖥️'}
           </div>
         </div>
-        <div className="absolute top-3 left-3 flex gap-1.5">
-          <Badge variant="secondary" className="text-[10px]">
-            {template.type.toUpperCase()}
-          </Badge>
-        </div>
-        {template.price === 0 && (
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Free</Badge>
-          </div>
-        )}
       </div>
 
       <div className="p-4 flex flex-col gap-3 flex-1">
@@ -131,19 +122,21 @@ function TemplateGridCard({ template, onBuy, onGetFree, buying }: { template: Te
           <h3 className="font-semibold text-foreground text-sm">{template.title}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
         </div>
-        <div className="flex items-center justify-between mt-auto pt-1">
-          <span className="text-base font-bold text-primary">
-            {template.price === 0 ? 'Free' : `$${template.price}`}
-          </span>
+        <div className="flex items-center justify-end mt-auto pt-1">
           <Button
             size="sm"
             className="h-7 px-3 text-xs"
-            onClick={() => template.price === 0 ? onGetFree(template) : onBuy(template)}
+            onClick={() => template.price === 0 ? router.push('/builder') : onBuy(template)}
             disabled={buying}
           >
             {buying ? (
               <Loader2 className="w-3 h-3 animate-spin" />
-            ) : template.price === 0 ? 'Get Free' : 'Buy — $13'}
+            ) : template.price === 0 ? 'Free' : (
+              <>
+                <ShoppingCart className="w-3 h-3 mr-1" />
+                Buy — ${template.price}
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -308,7 +301,6 @@ export default function MarketplaceContent() {
               key={template.template_id}
               template={template}
               onBuy={handleBuy}
-              onGetFree={handleGetFree}
               buying={buyingId === template.template_id}
             />
           ))}
