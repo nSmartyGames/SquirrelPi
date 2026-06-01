@@ -16,14 +16,14 @@ function mapUser(record: AirtableRecord): User {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const records = await base(Tables.USERS)
+  const records = await base()(Tables.USERS)
     .select({ filterByFormula: `{email}='${email}'`, maxRecords: 1 })
     .all()
   return records.length > 0 ? mapUser(records[0]) : null
 }
 
 export async function createUser(data: Omit<User, 'user_id'>): Promise<User> {
-  const record = await base(Tables.USERS).create({
+  const record = await base()(Tables.USERS).create({
     email: data.email,
     name: data.name,
     membership_status: data.membership_status,
@@ -34,6 +34,6 @@ export async function createUser(data: Omit<User, 'user_id'>): Promise<User> {
 }
 
 export async function updateUser(id: string, data: Partial<User>): Promise<User> {
-  const record = await base(Tables.USERS).update(id, data as unknown as Partial<Airtable.FieldSet>)
+  const record = await base()(Tables.USERS).update(id, data as unknown as Partial<Airtable.FieldSet>)
   return mapUser(record)
 }

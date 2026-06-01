@@ -19,25 +19,25 @@ function mapWebsite(record: AirtableRecord): Website {
 }
 
 export async function getWebsiteBySlug(slug: string): Promise<Website | null> {
-  const records = await base(Tables.WEBSITES)
+  const records = await base()(Tables.WEBSITES)
     .select({ filterByFormula: `{slug}='${slug}'`, maxRecords: 1 })
     .all()
   return records.length > 0 ? mapWebsite(records[0]) : null
 }
 
 export async function getWebsitesByUser(userId: string): Promise<Website[]> {
-  const records = await base(Tables.WEBSITES)
+  const records = await base()(Tables.WEBSITES)
     .select({ filterByFormula: `{owner_id}='${userId}'` })
     .all()
   return records.map(mapWebsite)
 }
 
 export async function createWebsite(data: Omit<Website, 'website_id'>): Promise<Website> {
-  const record = await base(Tables.WEBSITES).create(data as unknown as Partial<Airtable.FieldSet>)
+  const record = await base()(Tables.WEBSITES).create(data as unknown as Partial<Airtable.FieldSet>)
   return mapWebsite(record)
 }
 
 export async function updateWebsite(id: string, data: Partial<Website>): Promise<Website> {
-  const record = await base(Tables.WEBSITES).update(id, data as unknown as Partial<Airtable.FieldSet>)
+  const record = await base()(Tables.WEBSITES).update(id, data as unknown as Partial<Airtable.FieldSet>)
   return mapWebsite(record)
 }

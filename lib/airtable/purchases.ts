@@ -15,19 +15,19 @@ function mapPurchase(record: AirtableRecord): Purchase {
 }
 
 export async function getPurchasesByUser(userId: string): Promise<Purchase[]> {
-  const records = await base(Tables.PURCHASES)
+  const records = await base()(Tables.PURCHASES)
     .select({ filterByFormula: `{user_id}='${userId}'` })
     .all()
   return records.map(mapPurchase)
 }
 
 export async function createPurchase(data: Omit<Purchase, 'purchase_id'>): Promise<Purchase> {
-  const record = await base(Tables.PURCHASES).create(data as unknown as Partial<Airtable.FieldSet>)
+  const record = await base()(Tables.PURCHASES).create(data as unknown as Partial<Airtable.FieldSet>)
   return mapPurchase(record)
 }
 
 export async function userOwnsTemplate(userId: string, templateId: string): Promise<boolean> {
-  const records = await base(Tables.PURCHASES)
+  const records = await base()(Tables.PURCHASES)
     .select({
       filterByFormula: `AND({user_id}='${userId}', {template_id}='${templateId}')`,
       maxRecords: 1,
