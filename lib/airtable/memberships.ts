@@ -8,7 +8,7 @@ export interface Membership {
   user_id: string
   stripe_customer_id: string
   stripe_subscription_id: string
-  status: 'active' | 'cancelled' | 'past_due'
+  status: 'active' | 'pro_max' | 'cancelled' | 'past_due'
   created_at: string
 }
 

@@ -2,7 +2,7 @@ export interface User {
   user_id: string
   email: string
   name: string
-  membership_status: 'active' | 'none' | 'cancelled'
+  membership_status: 'active' | 'pro_max' | 'none' | 'cancelled'
   created_at: string
   stripe_customer_id?: string
 }

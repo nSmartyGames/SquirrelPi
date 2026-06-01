@@ -56,6 +56,7 @@ interface ClaudeMsg {
 interface SiteBuilderProps {
   initialHtml?: string
   isPro?: boolean
+  membershipTier?: 'free' | 'pro' | 'pro_max'
   promptsUsed?: number
 }
 
@@ -70,7 +71,7 @@ const palettes: ColorPalette[] = [
 
 type ModalType = 'title' | 'menu' | 'button' | null
 
-export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
+export default function SiteBuilder({ initialHtml, isPro = false, membershipTier = 'free', promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
   const [site, setSite] = useState<SiteState>({
     title: 'My Website',
     palette: palettes[0],
@@ -525,8 +526,10 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
           <div className="flex items-center gap-3">
             {isPro ? (
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                <Crown className="w-3 h-3 text-amber-400" />
-                <span className="text-[10px] font-semibold text-amber-400">Pro · Unlimited</span>
+                <span className="text-[11px]">{membershipTier === 'pro_max' ? '⭐⭐' : '⭐'}</span>
+                <span className="text-[10px] font-semibold text-amber-400">
+                  {membershipTier === 'pro_max' ? 'Pro Max · Unlimited' : 'Pro · Unlimited'}
+                </span>
               </div>
             ) : (
               <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${

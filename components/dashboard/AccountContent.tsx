@@ -16,7 +16,7 @@ interface AccountContentProps {
   name: string
   email: string
   userId: string
-  membershipStatus: 'active' | 'cancelled' | 'past_due' | null
+  membershipStatus: 'active' | 'pro_max' | 'cancelled' | 'past_due' | null
 }
 
 function FacebookIcon({ className }: { className?: string }) {
@@ -36,7 +36,10 @@ function InstagramIcon({ className }: { className?: string }) {
 }
 
 export default function AccountContent({ name, email, userId, membershipStatus }: AccountContentProps) {
-  const isActive = membershipStatus === 'active'
+  const isActive = membershipStatus === 'active' || membershipStatus === 'pro_max'
+  const isProMax = membershipStatus === 'pro_max'
+  const tierLabel = isProMax ? '⭐⭐ Pro Max' : isActive ? '⭐ Pro' : 'Free Plan'
+  const tierName = isProMax ? 'Pro Max Membership' : 'Pro Membership'
   const handleSubscribe = async () => {
     const res = await fetch('/api/stripe/membership', { method: 'POST' })
     const { url } = await res.json()
@@ -59,7 +62,7 @@ export default function AccountContent({ name, email, userId, membershipStatus }
             <h2 className="font-semibold text-foreground text-lg">{name || 'User'}</h2>
             <p className="text-sm text-muted-foreground">{email}</p>
           </div>
-          <Badge variant="secondary" className="ml-auto">{isActive ? 'Member' : 'Free Plan'}</Badge>
+          <Badge variant="secondary" className="ml-auto">{tierLabel}</Badge>
         </div>
       </motion.div>
 
@@ -76,15 +79,17 @@ export default function AccountContent({ name, email, userId, membershipStatus }
               <Star className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Starter Membership</h3>
-              <p className="text-xs text-muted-foreground">$3/month · Renews automatically · Full access to member benefits</p>
+              <h3 className="font-semibold text-foreground">{tierName}</h3>
+              <p className="text-xs text-muted-foreground">
+                {isProMax ? '$49/month · Pro Max benefits · Unlimited everything' : '$19/month · Renews automatically · Full access to member benefits'}
+              </p>
             </div>
           </div>
           <Badge className={isActive
             ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs"
             : "bg-primary/20 text-primary border-primary/20 text-xs"
           }>
-            {isActive ? 'Active' : membershipStatus === 'cancelled' ? 'Cancelled' : membershipStatus === 'past_due' ? 'Past Due' : 'Not Active'}
+            {isProMax ? '⭐⭐ Pro Max' : isActive ? '⭐ Active' : membershipStatus === 'cancelled' ? 'Cancelled' : membershipStatus === 'past_due' ? 'Past Due' : 'Not Active'}
           </Badge>
         </div>
 

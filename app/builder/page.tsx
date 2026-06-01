@@ -25,11 +25,17 @@ export default async function BuilderPage({
     }
   }
 
-  const isPro = user
+  const membershipTier: 'free' | 'pro' | 'pro_max' = user
     ? await getMembershipByUser(user.id)
-        .then(m => m?.status === 'active')
-        .catch(() => false)
-    : false
+        .then(m => {
+          if (m?.status === 'pro_max') return 'pro_max'
+          if (m?.status === 'active') return 'pro'
+          return 'free'
+        })
+        .catch(() => 'free')
+    : 'free'
+
+  const isPro = membershipTier !== 'free'
 
   let promptsUsed = 0
   if (user && !isPro) {
@@ -44,6 +50,7 @@ export default async function BuilderPage({
     <SiteBuilder
       initialHtml={initialHtml}
       isPro={isPro}
+      membershipTier={membershipTier}
       promptsUsed={promptsUsed}
     />
   )
