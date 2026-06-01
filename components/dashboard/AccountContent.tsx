@@ -1,9 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { LinkButton } from '@/components/ui/link-button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import {
   User,
   CreditCard,
@@ -77,7 +77,7 @@ export default function AccountContent({ name, email, userId, membershipStatus }
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Starter Membership</h3>
-              <p className="text-xs text-muted-foreground">$3/month</p>
+              <p className="text-xs text-muted-foreground">$3/month · Renews automatically · Full access to member benefits</p>
             </div>
           </div>
           <Badge className={isActive
@@ -123,12 +123,16 @@ export default function AccountContent({ name, email, userId, membershipStatus }
           <h3 className="font-semibold text-foreground">Domains</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          No domains registered yet. Purchase a domain and connect it to your website.
+          No domains registered yet.{' '}
+          <a href="https://www.namecheap.com/domains/" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+            Purchase a domain
+          </a>{' '}
+          and connect it to your website.
         </p>
-        <Button variant="outline" className="gap-2">
+        <a href="https://www.namecheap.com/domains/" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}>
           <Globe className="w-4 h-4" />
           Search Domains
-        </Button>
+        </a>
       </motion.div>
 
       {/* Meta Integrations */}
