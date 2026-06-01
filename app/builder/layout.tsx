@@ -1,0 +1,4 @@
+import AppShell from '@/components/layout/AppShell'
+export default function BuilderLayout({ children }: { children: React.ReactNode }) {
+  return <AppShell>{children}</AppShell>
+}
