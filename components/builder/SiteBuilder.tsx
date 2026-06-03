@@ -1,64 +1,29 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Palette, Type, Maximize2, Plus, Pencil, ExternalLink, Mail, X,
-  Send, Zap, ChevronDown, ChevronUp, Smartphone, Monitor, Crown,
+  Palette, Plus, Mail, X, Send, Zap, ChevronDown, ChevronUp, Crown, LayoutGrid,
+  ChevronLeft, ChevronRight, Type,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const FREE_PROMPT_LIMIT = 10
 
-interface PageItem {
-  id: string
-  title: string
-  caption: string
-}
-
-interface ButtonItem {
-  id: string
-  label: string
-  url: string
-}
-
 interface ColorPalette {
-  id: string
-  label: string
-  bg: string
-  text: string
-  accent: string
-  border: string
-  swatch: string
+  id: string; label: string; bg: string; text: string; accent: string; border: string; swatch: string
 }
 
-interface SiteState {
-  title: string
-  palette: ColorPalette
-  bigIcons: boolean
-  largeFont: boolean
-  pages: PageItem[]
-  buttons: ButtonItem[]
-  siteUrl: string
-}
-
-interface DisplayMsg {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-}
-
-interface ClaudeMsg {
-  role: 'user' | 'assistant'
-  content: string
-}
+interface DisplayMsg { id: string; role: 'user' | 'assistant'; content: string }
+interface ClaudeMsg  { role: 'user' | 'assistant'; content: string }
 
 interface SiteBuilderProps {
   initialHtml?: string
   isPro?: boolean
-  membershipTier?: 'free' | 'pro' | 'pro_max'
   promptsUsed?: number
 }
+
+type SectionElementType = 'card' | 'button' | 'form'
 
 const palettes: ColorPalette[] = [
   { id: 'dark',   label: 'Dark',   bg: '#0a0a0f', text: '#f0f0f0', accent: '#4ade80', border: '#1a2a1a', swatch: '#4ade80' },
@@ -69,24 +34,130 @@ const palettes: ColorPalette[] = [
   { id: 'light',  label: 'Light',  bg: '#f8f9fa', text: '#1a1a2e', accent: '#2563eb', border: '#e2e8f0', swatch: '#2563eb' },
 ]
 
-type ModalType = 'title' | 'menu' | 'button' | null
+function buildPaletteOverride(p: ColorPalette): string {
+  return `:root{--bg:${p.bg}!important;--bg2:${p.bg}!important;--bg3:${p.bg}!important;--text:${p.text}!important;--muted:${p.text}99!important;--accent:${p.accent}!important;--accent2:${p.accent}!important;--border:${p.border}!important;--radius:12px;}body,html{background:${p.bg}!important;color:${p.text}!important;}`
+}
 
-export default function SiteBuilder({ initialHtml, isPro = false, membershipTier = 'free', promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
-  const [site, setSite] = useState<SiteState>({
-    title: 'My Website',
-    palette: palettes[0],
-    bigIcons: false,
-    largeFont: false,
-    pages: [],
-    buttons: [],
-    siteUrl: '',
-  })
+function parseHtml(html: string): { styles: string; body: string } {
+  const styleBlocks: string[] = []
+  const stripped = html.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (_, content) => {
+    styleBlocks.push(content)
+    return ''
+  }).replace(/<script[\s\S]*?<\/script>/gi, '')
+  const bodyMatch = stripped.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  return {
+    styles: styleBlocks.join('\n'),
+    body: (bodyMatch?.[1] ?? stripped).trim(),
+  }
+}
+
+function reconstructHtml(bodyInner: string, styles: string, palette: ColorPalette): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>${styles}</style><style>${buildPaletteOverride(palette)}</style></head><body>${bodyInner}</body></html>`
+}
+
+function buildColumnContent(type: SectionElementType): string {
+  if (type === 'card') {
+    return `<h3 style="color:var(--accent);font-size:1.1rem;font-weight:700;margin:0 0 0.5rem 0;">Card Title</h3><p style="color:var(--text);opacity:0.7;font-size:0.875rem;margin:0;line-height:1.6;">Add your description here.</p>`
+  }
+  if (type === 'button') {
+    return `<a href="#" style="display:inline-block;background:var(--accent);color:var(--bg);font-weight:700;padding:0.75rem 1.75rem;border-radius:9999px;text-decoration:none;font-size:0.875rem;">Button Text</a>`
+  }
+  return `<form style="display:flex;flex-direction:column;gap:0.625rem;" onsubmit="return false"><h4 style="color:var(--accent);font-size:0.95rem;font-weight:700;margin:0 0 0.125rem 0;">Contact</h4><input type="text" placeholder="Name" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text);font-size:0.8rem;outline:none;width:100%;box-sizing:border-box;"/><input type="email" placeholder="Email" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text);font-size:0.8rem;outline:none;width:100%;box-sizing:border-box;"/><textarea rows="3" placeholder="Message…" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text);font-size:0.8rem;outline:none;resize:none;width:100%;box-sizing:border-box;"></textarea><a href="#" onclick="return false" style="display:inline-block;background:var(--accent);color:var(--bg);font-weight:700;padding:0.5rem 1rem;border-radius:9999px;text-decoration:none;font-size:0.8rem;text-align:center;cursor:pointer;">Send</a></form>`
+}
+
+const ADD_BTN_HTML = `<button data-squirrel-add contenteditable="false" style="align-self:flex-end;width:32px;height:32px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;font-size:20px;line-height:32px;text-align:center;color:var(--bg);font-weight:bold;opacity:0.45;flex-shrink:0;transition:opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'">+</button>`
+
+function buildSection(cols: number, type: SectionElementType): string {
+  const columns = Array(cols).fill(null).map(() =>
+    `<div data-squirrel-col style="flex:1;min-width:200px;padding:1.5rem;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;gap:0.75rem;">${buildColumnContent(type)}${ADD_BTN_HTML}</div>`
+  ).join('\n    ')
+  return `\n<section style="padding:3rem 5vw;"><div style="display:flex;gap:1.25rem;flex-wrap:wrap;">\n    ${columns}\n  </div></section>\n`
+}
+
+function buildContactSection(): string {
+  return `\n<section style="padding:3rem 5vw;"><div data-squirrel-col style="max-width:520px;margin:0 auto;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:2rem;display:flex;flex-direction:column;gap:0.875rem;"><h3 style="color:var(--accent);font-size:1.25rem;font-weight:700;margin:0;">Contact Us</h3><form style="display:flex;flex-direction:column;gap:0.75rem;" onsubmit="return false"><div style="display:flex;gap:0.75rem;"><input type="text" placeholder="Name" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.875rem;outline:none;"/><input type="email" placeholder="Email" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.875rem;outline:none;"/></div><textarea rows="4" placeholder="Your message…" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:0.625rem 0.875rem;color:var(--text);font-size:0.875rem;outline:none;resize:vertical;"></textarea><a href="#" onclick="return false" style="display:inline-block;background:var(--accent);color:var(--bg);font-weight:700;padding:0.75rem 1.75rem;border-radius:9999px;text-decoration:none;font-size:0.875rem;text-align:center;cursor:pointer;">Send Message</a></form>${ADD_BTN_HTML}</div></section>\n`
+}
+
+function stripBuilderUI(html: string): string {
+  return html.replace(/<button[^>]*data-squirrel-add[^>]*>[\s\S]*?<\/button>/g, '')
+}
+
+// ── WebsiteEditor ─────────────────────────────────────────────────────────────
+interface WebsiteEditorProps {
+  html: string
+  palette: ColorPalette
+  onChange: (html: string) => void
+  editorRef: React.RefObject<HTMLDivElement | null>
+  onColumnAdd?: (columnEl: HTMLElement) => void
+}
+
+function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: WebsiteEditorProps) {
+  const { styles, body } = useMemo(() => parseHtml(html), [html])
+  const lastExternalRef = useRef(html)
+  const stylesRef = useRef(styles)
+  stylesRef.current = styles
+
+  useEffect(() => {
+    if (html !== lastExternalRef.current && editorRef.current) {
+      lastExternalRef.current = html
+      editorRef.current.innerHTML = body
+    }
+  }, [html, body, editorRef])
+
+  useEffect(() => {
+    if (editorRef.current && body) {
+      editorRef.current.innerHTML = body
+      lastExternalRef.current = html
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
+    const newBody = e.currentTarget.innerHTML
+    const reconstructed = reconstructHtml(newBody, stylesRef.current, palette)
+    lastExternalRef.current = reconstructed
+    onChange(reconstructed)
+  }, [onChange, palette])
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement
+    const addBtn = target.hasAttribute('data-squirrel-add')
+      ? target
+      : (target.closest('[data-squirrel-add]') as HTMLElement | null)
+    if (addBtn) {
+      e.preventDefault()
+      e.stopPropagation()
+      const col = addBtn.closest('[data-squirrel-col]') as HTMLElement | null
+      if (col && onColumnAdd) onColumnAdd(col)
+    }
+  }, [onColumnAdd])
+
+  const paletteOverride = buildPaletteOverride(palette)
+
+  return (
+    <div id="website-theme" style={{ background: palette.bg, minHeight: '100%' }}>
+      <style dangerouslySetInnerHTML={{ __html: styles + '\n' + paletteOverride }} />
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onClick={handleClick}
+        style={{ outline: 'none', minHeight: '100vh' }}
+      />
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+type ModalType = 'section' | 'column-add' | null
+
+export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
+  const [palette, setPalette] = useState<ColorPalette>(palettes[0])
+  const [siteTitle, setSiteTitle] = useState('My Website')
   const [modal, setModal] = useState<ModalType>(null)
-  const [formTitle, setFormTitle] = useState('')
-  const [formCaption, setFormCaption] = useState('')
-  const [formBtnLabel, setFormBtnLabel] = useState('')
-  const [formBtnUrl, setFormBtnUrl] = useState('')
-  const [newTitle, setNewTitle] = useState(site.title)
+  const [sectionCols, setSectionCols] = useState(2)
+  const [sectionType, setSectionType] = useState<SectionElementType>('card')
 
   // AI console
   const [generatedHtml, setGeneratedHtml] = useState(initialHtml ?? '')
@@ -95,77 +166,76 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
   const [claudeHistory, setClaudeHistory] = useState<ClaudeMsg[]>([])
   const [consoleInput, setConsoleInput] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [previewMode, setPreviewMode] = useState<'phone' | 'web'>(initialHtml ? 'web' : 'phone')
 
   // Prompt tracking
   const [localPromptsUsed, setLocalPromptsUsed] = useState(initialPromptsUsed)
   const [limitReached, setLimitReached] = useState(!isPro && initialPromptsUsed >= FREE_PROMPT_LIMIT)
 
   // Deploy
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [deploying, setDeploying] = useState(false)
   const [deployUrl, setDeployUrl] = useState('')
+  const [handingOver, setHandingOver] = useState(false)
+  const [handoverUrl, setHandoverUrl] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
+  const targetColumnRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    if (consoleOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
+    if (consoleOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [displayMsgs, consoleOpen])
 
-  // Load initial template HTML into history so Claude knows the starting point
   useEffect(() => {
-    if (initialHtml) {
-      setClaudeHistory([{ role: 'assistant', content: initialHtml }])
-    }
+    if (initialHtml) setClaudeHistory([{ role: 'assistant', content: initialHtml }])
   }, [initialHtml])
 
-  function openModal(type: ModalType) {
-    setFormTitle('')
-    setFormCaption('')
-    setFormBtnLabel('')
-    setFormBtnUrl('')
-    setNewTitle(site.title)
-    setModal(type)
-  }
-
-  function addPage() {
-    if (!formTitle.trim()) return
-    setSite(s => ({
-      ...s,
-      pages: [...s.pages, { id: crypto.randomUUID(), title: formTitle.trim(), caption: formCaption.trim() || formTitle.trim() }],
-    }))
+  function insertSection() {
+    if (!editorRef.current) return
+    const html = sectionType === 'form' ? buildContactSection() : buildSection(sectionCols, sectionType)
+    editorRef.current.insertAdjacentHTML('beforeend', html)
+    const newBody = editorRef.current.innerHTML
+    const { styles } = parseHtml(generatedHtml)
+    setGeneratedHtml(reconstructHtml(newBody, styles, palette))
     setModal(null)
   }
 
-  function addButton() {
-    if (!formBtnLabel.trim() || !formBtnUrl.trim()) return
-    setSite(s => ({
-      ...s,
-      buttons: [...s.buttons, { id: crypto.randomUUID(), label: formBtnLabel.trim(), url: formBtnUrl.trim() }],
-    }))
+  function insertIntoColumn() {
+    const col = targetColumnRef.current
+    if (!col || !editorRef.current) return
+    const addBtn = col.querySelector('[data-squirrel-add]') as HTMLElement | null
+    const content = buildColumnContent(sectionType)
+    if (addBtn) {
+      addBtn.insertAdjacentHTML('beforebegin', `<div style="margin-top:0.25rem;">${content}</div>`)
+    } else {
+      col.insertAdjacentHTML('beforeend', content)
+    }
+    const newBody = editorRef.current.innerHTML
+    const { styles } = parseHtml(generatedHtml)
+    setGeneratedHtml(reconstructHtml(newBody, styles, palette))
     setModal(null)
+    targetColumnRef.current = null
   }
 
-  function applyTitle() {
-    setSite(s => ({ ...s, title: newTitle }))
-    setModal(null)
-  }
+  const handleColumnAdd = useCallback((columnEl: HTMLElement) => {
+    targetColumnRef.current = columnEl
+    setModal('column-add')
+  }, [])
 
   async function sendConsoleMsg() {
     const input = consoleInput.trim()
     if (!input || generating) return
-
     if (input === '/clean') {
       setDisplayMsgs([])
       setClaudeHistory([])
       setGeneratedHtml('')
-      setPreviewMode('phone')
+      if (editorRef.current) editorRef.current.innerHTML = ''
       setDeployUrl('')
       setConsoleInput('')
       return
     }
-
     if (limitReached) return
 
     setConsoleInput('')
@@ -183,40 +253,23 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
 
       if (data.limitReached) {
         setLimitReached(true)
-        setDisplayMsgs(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: 'Prompt limit reached. Upgrade to Pro for unlimited prompts.',
-        }])
+        setDisplayMsgs(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: 'Prompt limit reached. Upgrade to Pro for unlimited prompts.' }])
         return
       }
 
       if (data.html) {
         setGeneratedHtml(data.html)
-        setPreviewMode('web')
         setClaudeHistory([...newHistory, { role: 'assistant', content: data.html }])
         if (!isPro && data.promptsUsed != null) {
           setLocalPromptsUsed(data.promptsUsed)
           if (data.promptsRemaining <= 0) setLimitReached(true)
         }
-        setDisplayMsgs(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: 'Page generated — preview updated. Type /clean to start fresh.',
-        }])
+        setDisplayMsgs(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: 'Page generated — you can now edit any text directly on the canvas. Type /clean to start fresh.' }])
       } else {
-        setDisplayMsgs(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: data.error || 'Generation failed.',
-        }])
+        setDisplayMsgs(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.error || 'Generation failed.' }])
       }
     } catch {
-      setDisplayMsgs(prev => [...prev, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: 'Request failed. Check connection.',
-      }])
+      setDisplayMsgs(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: 'Request failed. Check connection.' }])
     } finally {
       setGenerating(false)
     }
@@ -230,33 +283,39 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
       const res = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectName: site.title,
-          siteName: site.title,
-          htmlContent: generatedHtml,
-        }),
+        body: JSON.stringify({ projectName: siteTitle, siteName: siteTitle, htmlContent: stripBuilderUI(generatedHtml) }),
       })
       const data = await res.json()
-      if (data.pagesUrl) {
-        setDeployUrl(data.pagesUrl)
-        setSite(s => ({ ...s, siteUrl: data.pagesUrl }))
-      }
-    } catch {
-      // silent
-    } finally {
-      setDeploying(false)
-    }
+      if (data.pagesUrl) setDeployUrl(data.pagesUrl)
+    } catch { /* silent */ } finally { setDeploying(false) }
   }
 
-  const { bg, text, accent, border } = site.palette
-  const titleSize = site.largeFont ? 22 : 17
-  const menuSize  = site.largeFont ? 15 : 12
-  const btnSize   = site.largeFont ? 14 : 11
-  const iconPad   = site.bigIcons  ? 14 : 9
+  async function handleToDev() {
+    if (!generatedHtml) return
+    setHandingOver(true)
+    setHandoverUrl('')
+    setEmailSent(false)
+    try {
+      const res = await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectName: siteTitle, siteName: siteTitle, htmlContent: stripBuilderUI(generatedHtml) }),
+      })
+      const data = await res.json()
+      if (data.pagesUrl) setHandoverUrl(data.pagesUrl)
+    } catch { /* silent */ } finally { setHandingOver(false) }
+  }
 
-  function buildHandoverHref() {
-    const url = site.siteUrl || (typeof window !== 'undefined' ? window.location.href : '')
-    return `mailto:lucian.virtic@hotmail.com?subject=Handed%20to%20me&body=${encodeURIComponent(url)}`
+  async function sendHandoverEmail() {
+    setSendingEmail(true)
+    try {
+      await fetch('/api/email/handover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ previewUrl: handoverUrl, siteTitle }),
+      })
+      setEmailSent(true)
+    } finally { setSendingEmail(false) }
   }
 
   const promptsRemaining = FREE_PROMPT_LIMIT - localPromptsUsed
@@ -264,251 +323,154 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
 
   return (
     <div className="flex flex-col h-full">
-
-      {/* ── Builder row ── */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* ── Left: design tools ── */}
-        <aside className="w-56 shrink-0 border-r border-border bg-card flex flex-col gap-5 p-5 overflow-y-auto">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Design Tools</p>
+        {/* ── Center: canvas ── */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Palette className="w-4 h-4 text-primary shrink-0" />
-              Color Palette
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              {palettes.map(p => (
+          {/* ── Floating tool sidebar ── */}
+          {sidebarOpen ? (
+            <aside className="absolute left-0 top-0 h-full w-56 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col gap-4 p-4 overflow-y-auto shadow-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Theme</p>
                 <button
-                  key={p.id}
-                  title={p.label}
-                  onClick={() => setSite(s => ({ ...s, palette: p }))}
-                  className={`h-9 rounded-lg border-2 transition-all ${site.palette.id === p.id ? 'border-white scale-105' : 'border-transparent hover:border-white/30'}`}
-                  style={{ background: `linear-gradient(135deg, ${p.bg} 40%, ${p.swatch})` }}
+                  onClick={() => setSidebarOpen(false)}
+                  title="Collapse sidebar"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Palette className="w-4 h-4 text-primary shrink-0" />
+                  Color Palette
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {palettes.map(p => (
+                    <button
+                      key={p.id}
+                      title={p.label}
+                      onClick={() => setPalette(p)}
+                      className={`h-9 rounded-lg border-2 transition-all ${palette.id === p.id ? 'border-white scale-105' : 'border-transparent hover:border-white/30'}`}
+                      style={{ background: `linear-gradient(135deg, ${p.bg} 40%, ${p.swatch})` }}
+                    />
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{palette.label}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Type className="w-4 h-4 text-primary shrink-0" />
+                  Site name
+                </div>
+                <input
+                  type="text"
+                  value={siteTitle}
+                  onChange={e => setSiteTitle(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-lg bg-background/50 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
-              ))}
-            </div>
-            <p className="text-[11px] text-muted-foreground">{site.palette.label}</p>
-          </div>
+              </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Maximize2 className="w-4 h-4 text-primary shrink-0" />
-              Big Icons
-            </div>
+              <div className="mt-auto space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tips</p>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">Click any text to edit inline. Use AI console to generate sections.</p>
+              </div>
+            </aside>
+          ) : (
+            <aside className="absolute left-0 top-0 h-full w-10 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col items-center py-3 gap-3 shadow-xl">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                title="Expand tools"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <div title="Color Palette" className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Palette className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div title="Site name" className="w-7 h-7 rounded-lg bg-muted/20 flex items-center justify-center">
+                <Type className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+            </aside>
+          )}
+
+          {/* ── Toolbar (actions bar — not collapsible) ── */}
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card/60 shrink-0 flex-wrap">
             <button
-              onClick={() => setSite(s => ({ ...s, bigIcons: !s.bigIcons }))}
-              className={`w-full py-2 rounded-lg text-sm font-medium border transition-all ${site.bigIcons ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-muted/30 border-border text-muted-foreground hover:border-primary/30'}`}
+              onClick={() => setModal('section')}
+              disabled={!generatedHtml}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-muted/20 hover:border-primary/30 hover:bg-primary/5 text-xs font-semibold text-foreground transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {site.bigIcons ? 'On' : 'Off'}
+              <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+              Add Section
             </button>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Type className="w-4 h-4 text-primary shrink-0" />
-              Large Font
+            <div className="ml-auto flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleToDev}
+                disabled={handingOver || !generatedHtml}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {handingOver ? 'Creating…' : 'Handle to dev'}
+              </button>
+              <button
+                onClick={deployLive}
+                disabled={deploying || !generatedHtml}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                {deploying ? 'Deploying…' : 'Deploy Live'}
+              </button>
             </div>
-            <button
-              onClick={() => setSite(s => ({ ...s, largeFont: !s.largeFont }))}
-              className={`w-full py-2 rounded-lg text-sm font-medium border transition-all ${site.largeFont ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-muted/30 border-border text-muted-foreground hover:border-primary/30'}`}
-            >
-              {site.largeFont ? 'On' : 'Off'}
-            </button>
           </div>
 
-          <div className="mt-auto space-y-1.5">
-            <p className="text-[10px] text-muted-foreground">Site URL (for handover email)</p>
-            <input
-              type="url"
-              placeholder="https://my-site.pages.dev"
-              value={site.siteUrl}
-              onChange={e => setSite(s => ({ ...s, siteUrl: e.target.value }))}
-              className="w-full px-2.5 py-2 rounded-lg bg-background/50 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-          </div>
-        </aside>
+          {/* URL bars */}
+          {(handoverUrl || deployUrl) && (
+            <div className="flex items-center gap-4 px-4 py-1.5 border-b border-border bg-card/40 flex-wrap shrink-0">
+              {handoverUrl && (
+                <div className="flex items-center gap-2">
+                  <a href={handoverUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary/80 hover:underline truncate max-w-48">{handoverUrl}</a>
+                  <button
+                    onClick={sendHandoverEmail}
+                    disabled={sendingEmail || emailSent}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-primary/40 bg-primary/10 text-primary text-[10px] font-semibold hover:bg-primary/20 transition-colors disabled:opacity-60"
+                  >
+                    <Send className="w-2.5 h-2.5" />
+                    {emailSent ? 'Sent ✓' : sendingEmail ? '…' : 'Email Admin'}
+                  </button>
+                </div>
+              )}
+              {deployUrl && (
+                <a href={deployUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-emerald-400 hover:underline truncate max-w-48">{deployUrl}</a>
+              )}
+            </div>
+          )}
 
-        {/* ── Center: preview ── */}
-        <div className="flex-1 flex flex-col items-center gap-4 px-6 py-6 overflow-y-auto">
-          {/* Preview header */}
-          <div className="flex items-center gap-3 shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Preview</p>
-            {generatedHtml && (
-              <div className="flex gap-1 rounded-lg border border-border p-0.5">
-                <button
-                  onClick={() => setPreviewMode('phone')}
-                  title="Phone preview"
-                  className={`p-1.5 rounded-md transition-colors ${previewMode === 'phone' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setPreviewMode('web')}
-                  title="Web preview"
-                  className={`p-1.5 rounded-md transition-colors ${previewMode === 'web' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                </button>
+          {/* Canvas */}
+          <div className="flex-1 overflow-y-auto">
+            {generatedHtml ? (
+              <WebsiteEditor
+                html={generatedHtml}
+                palette={palette}
+                onChange={setGeneratedHtml}
+                editorRef={editorRef}
+                onColumnAdd={handleColumnAdd}
+              />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center gap-3 text-center p-8">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Palette className="w-7 h-7 text-primary" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">Canvas is empty</p>
+                <p className="text-xs text-muted-foreground max-w-xs">Use the AI console below to generate your page, or load a template from the Marketplace.</p>
               </div>
             )}
           </div>
-
-          {/* Phone frame */}
-          {(previewMode === 'phone' || !generatedHtml) && (
-            <div className="relative shrink-0" style={{ width: 240, height: 480 }}>
-              <div className="absolute inset-0 rounded-[36px] border-[5px] border-neutral-700 shadow-2xl overflow-hidden" style={{ background: bg }}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-neutral-900 rounded-b-xl z-10" />
-                <div className="absolute inset-0 overflow-y-auto" style={{ paddingTop: 28, background: bg, color: text }}>
-                  <div className="px-4 pt-3 pb-2 border-b" style={{ borderColor: border }}>
-                    <h1 style={{ fontSize: titleSize, fontWeight: 800, color: accent, lineHeight: 1.2 }}>
-                      {site.title}
-                    </h1>
-                  </div>
-                  {site.pages.map(p => (
-                    <div key={p.id} className="border-b" style={{ borderColor: border, padding: `${iconPad}px 16px` }}>
-                      <div style={{ fontSize: menuSize, fontWeight: 700, textTransform: 'uppercase', color: text, letterSpacing: '0.05em' }}>
-                        {p.title}
-                      </div>
-                      <div style={{ fontSize: menuSize - 1, fontVariant: 'small-caps', color: text, opacity: 0.55, marginTop: 2 }}>
-                        {p.caption}
-                      </div>
-                    </div>
-                  ))}
-                  {site.buttons.length > 0 && (
-                    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {site.buttons.map(btn => (
-                        <div
-                          key={btn.id}
-                          style={{ background: accent, color: bg, fontSize: btnSize, fontWeight: 700, padding: `${iconPad}px 16px`, borderRadius: 10, textAlign: 'center' }}
-                        >
-                          {btn.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {site.pages.length === 0 && site.buttons.length === 0 && (
-                    <div style={{ padding: 20, textAlign: 'center', opacity: 0.35, fontSize: 10 }}>
-                      Use actions on the right to build your site
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="absolute right-[-5px] top-20 w-1.5 h-12 bg-neutral-700 rounded-r-full" />
-              <div className="absolute left-[-5px] top-16 w-1.5 h-8 bg-neutral-700 rounded-l-full" />
-              <div className="absolute left-[-5px] top-28 w-1.5 h-8 bg-neutral-700 rounded-l-full" />
-            </div>
-          )}
-
-          {/* Web iframe */}
-          {previewMode === 'web' && generatedHtml && (
-            <div className="w-full flex-1 min-h-0 rounded-xl overflow-hidden border border-border shadow-xl" style={{ minHeight: 400 }}>
-              <iframe
-                srcDoc={generatedHtml}
-                className="w-full h-full"
-                sandbox="allow-scripts allow-same-origin"
-                title="Generated page preview"
-                style={{ minHeight: 400 }}
-              />
-            </div>
-          )}
-
-          {/* Handle to dev + Deploy Live */}
-          <div className="flex items-center gap-3 shrink-0 flex-wrap justify-center">
-            <a
-              href={buildHandoverHref()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
-            >
-              <Mail className="w-4 h-4" />
-              Handle to dev
-            </a>
-            <button
-              onClick={deployLive}
-              disabled={deploying || !generatedHtml}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Zap className="w-4 h-4" />
-              {deploying ? 'Deploying…' : 'Deploy Live'}
-            </button>
-          </div>
-
-          {deployUrl && (
-            <a
-              href={deployUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-emerald-400 hover:underline shrink-0"
-            >
-              {deployUrl}
-            </a>
-          )}
         </div>
-
-        {/* ── Right: actions ── */}
-        <aside className="w-56 shrink-0 border-l border-border bg-card flex flex-col gap-4 p-5 overflow-y-auto">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Actions</p>
-
-          <button
-            onClick={() => openModal('title')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Pencil className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Change Title</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Edit site heading</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => openModal('menu')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all text-left"
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-              <Plus className="w-3.5 h-3.5 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Add Menu</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Create a page link</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => openModal('button')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-muted/20 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all text-left"
-          >
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-              <ExternalLink className="w-3.5 h-3.5 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Add Button Action</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Link to a URL</p>
-            </div>
-          </button>
-
-          {(site.pages.length > 0 || site.buttons.length > 0) && (
-            <div className="mt-2 space-y-1.5">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Added</p>
-              {site.pages.map(p => (
-                <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-muted/20 gap-2">
-                  <span className="text-[11px] text-foreground font-medium uppercase truncate">{p.title}</span>
-                  <button onClick={() => setSite(s => ({ ...s, pages: s.pages.filter(x => x.id !== p.id) }))} className="text-muted-foreground hover:text-red-400 shrink-0">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {site.buttons.map(b => (
-                <div key={b.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-muted/20 gap-2">
-                  <span className="text-[11px] text-foreground font-medium truncate">{b.label}</span>
-                  <button onClick={() => setSite(s => ({ ...s, buttons: s.buttons.filter(x => x.id !== b.id) }))} className="text-muted-foreground hover:text-red-400 shrink-0">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </aside>
       </div>
 
       {/* ── AI Console ── */}
@@ -516,7 +478,6 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
         className="shrink-0 border-t border-border bg-card/90 backdrop-blur-sm flex flex-col transition-all duration-200"
         style={{ height: consoleOpen ? 260 : 40 }}
       >
-        {/* Console header */}
         <div className="flex items-center justify-between px-4 h-10 shrink-0 border-b border-border/40">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -526,26 +487,15 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
           <div className="flex items-center gap-3">
             {isPro ? (
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                <span className="text-[11px]">{membershipTier === 'pro_max' ? '⭐⭐' : '⭐'}</span>
-                <span className="text-[10px] font-semibold text-amber-400">
-                  {membershipTier === 'pro_max' ? 'Pro Max · Unlimited' : 'Pro · Unlimited'}
-                </span>
+                <Crown className="w-3 h-3 text-amber-400" />
+                <span className="text-[10px] font-semibold text-amber-400">Pro · Unlimited</span>
               </div>
             ) : (
-              <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
-                limitReached
-                  ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                  : promptWarning
-                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                  : 'bg-muted/30 border-border text-muted-foreground'
-              }`}>
+              <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${limitReached ? 'bg-red-500/10 border-red-500/20 text-red-400' : promptWarning ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-muted/30 border-border text-muted-foreground'}`}>
                 <span>{localPromptsUsed} / {FREE_PROMPT_LIMIT} prompts</span>
               </div>
             )}
-            <button
-              onClick={() => setConsoleOpen(o => !o)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button onClick={() => setConsoleOpen(o => !o)} className="text-muted-foreground hover:text-foreground transition-colors">
               {consoleOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </button>
           </div>
@@ -553,22 +503,15 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
 
         {consoleOpen && (
           <>
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
               {displayMsgs.length === 0 && !limitReached && (
                 <p className="text-[11px] text-muted-foreground/40 text-center pt-2">
-                  {initialHtml
-                    ? 'Theme loaded — describe changes or ask Claude to modify it.'
-                    : 'Describe your page. e.g. "Layout: top 15% header with menu, two content rows, bottom 15% footer"'}
+                  {initialHtml ? 'Theme loaded — describe changes or ask Claude to modify it.' : 'Describe your page. e.g. "A SaaS landing page with dark theme, hero section, features grid and pricing"'}
                 </p>
               )}
               {displayMsgs.map(msg => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] px-3 py-1.5 rounded-xl text-[12px] leading-snug ${
-                    msg.role === 'user'
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted/40 text-muted-foreground'
-                  }`}>
+                  <div className={`max-w-[80%] px-3 py-1.5 rounded-xl text-[12px] leading-snug ${msg.role === 'user' ? 'bg-primary/20 text-primary' : 'bg-muted/40 text-muted-foreground'}`}>
                     {msg.content}
                   </div>
                 </div>
@@ -587,7 +530,6 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input row */}
             <div className="px-4 pb-3 pt-1 shrink-0">
               {limitReached ? (
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
@@ -595,12 +537,8 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
                     <Crown className="w-3.5 h-3.5 text-red-400" />
                     <span className="text-[12px] text-red-400 font-medium">Free limit reached ({FREE_PROMPT_LIMIT} prompts)</span>
                   </div>
-                  <a
-                    href="/account"
-                    className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
-                  >
-                    <Crown className="w-3 h-3" />
-                    Upgrade to Pro
+                  <a href="/account" className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+                    <Crown className="w-3 h-3" />Upgrade to Pro
                   </a>
                 </div>
               ) : (
@@ -614,12 +552,7 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
                     disabled={generating}
                     className="flex-1 px-3 py-2 rounded-lg bg-background/60 border border-border text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
                   />
-                  <Button
-                    size="sm"
-                    onClick={sendConsoleMsg}
-                    disabled={generating || !consoleInput.trim()}
-                    className="px-3"
-                  >
+                  <Button size="sm" onClick={sendConsoleMsg} disabled={generating || !consoleInput.trim()} className="px-3">
                     <Send className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -631,111 +564,63 @@ export default function SiteBuilder({ initialHtml, isPro = false, membershipTier
 
       {/* ── Modals ── */}
       <AnimatePresence>
-        {modal && (
+        {(modal === 'section' || modal === 'column-add') && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
             onClick={() => setModal(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl p-6 w-96 space-y-4 shadow-xl"
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border rounded-2xl p-6 w-80 space-y-5 shadow-xl"
               onClick={e => e.stopPropagation()}
             >
-              {modal === 'title' && (
-                <>
-                  <h3 className="font-semibold text-foreground">Change Site Title</h3>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && applyTitle()}
-                    placeholder="Site title"
-                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
-                    <Button size="sm" onClick={applyTitle}>Apply</Button>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground">
+                  {modal === 'column-add' ? 'Add to column' : 'Add Section'}
+                </h3>
+                <button onClick={() => setModal(null)}><X className="w-4 h-4 text-muted-foreground hover:text-foreground" /></button>
+              </div>
+
+              {modal === 'section' && sectionType !== 'form' && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium">Columns</p>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setSectionCols(n)}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${sectionCols === n ? 'bg-primary/20 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
                   </div>
-                </>
+                </div>
               )}
 
-              {modal === 'menu' && (
-                <>
-                  <h3 className="font-semibold text-foreground">Add Menu Page</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">
-                        Page title <span className="text-[10px] opacity-60">(shown ALL CAPS)</span>
-                      </label>
-                      <input
-                        autoFocus
-                        type="text"
-                        value={formTitle}
-                        onChange={e => setFormTitle(e.target.value)}
-                        placeholder="e.g. About Us"
-                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">
-                        Menu caption <span className="text-[10px] opacity-60">(shown in small caps)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formCaption}
-                        onChange={e => setFormCaption(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && addPage()}
-                        placeholder="e.g. Learn about our story"
-                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
-                    <Button size="sm" onClick={addPage} disabled={!formTitle.trim()}>Add Page</Button>
-                  </div>
-                </>
-              )}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Element type</p>
+                <div className="flex gap-2">
+                  {(['card', 'button', 'form'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setSectionType(t)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-semibold border capitalize transition-all ${sectionType === t ? 'bg-primary/20 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                    >
+                      {t === 'form' ? 'Form' : t}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              {modal === 'button' && (
-                <>
-                  <h3 className="font-semibold text-foreground">Add Button Action</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Button label</label>
-                      <input
-                        autoFocus
-                        type="text"
-                        value={formBtnLabel}
-                        onChange={e => setFormBtnLabel(e.target.value)}
-                        placeholder="e.g. Learn More"
-                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Link URL</label>
-                      <input
-                        type="url"
-                        value={formBtnUrl}
-                        onChange={e => setFormBtnUrl(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && addButton()}
-                        placeholder="https://example.com"
-                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
-                    <Button size="sm" onClick={addButton} disabled={!formBtnLabel.trim() || !formBtnUrl.trim()}>Add Button</Button>
-                  </div>
-                </>
-              )}
+              <div className="flex gap-2 justify-end pt-1">
+                <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+                <Button size="sm" onClick={modal === 'column-add' ? insertIntoColumn : insertSection}>
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  {modal === 'column-add' ? 'Add' : 'Insert'}
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -6,8 +6,6 @@ import { motion } from 'framer-motion'
 import { UserButton } from '@clerk/nextjs'
 import {
   Info,
-  Layout,
-  Box,
   ShoppingBag,
   Globe,
   ShoppingCart,
@@ -17,13 +15,14 @@ import {
   Star,
   Shield,
   PenTool,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useSidebar } from './SidebarContext'
 
 const navItems = [
   { label: 'About', href: '/', icon: Info, accent: false },
-  { label: '2D Templates', href: '/templates/2d', icon: Layout, accent: false },
-  { label: '3D Templates', href: '/templates/3d', icon: Box, accent: false },
   { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag, accent: false },
   { label: 'Dashboard', href: '/dashboard', icon: Globe, accent: false },
   { label: 'My Stack', href: '/dashboard/purchases', icon: ShoppingCart, accent: false },
@@ -35,21 +34,54 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { collapsed, toggle } = useSidebar()
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-[20%] min-w-[200px] max-w-[260px] flex flex-col bg-sidebar border-r border-sidebar-border z-40">
+    <aside
+      className={cn(
+        'fixed left-0 top-0 h-full flex flex-col bg-sidebar border-r border-sidebar-border z-40 transition-all duration-200',
+        collapsed ? 'w-11' : 'w-[20%] min-w-[200px] max-w-[260px]'
+      )}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-          <Squirrel className="w-4 h-4 text-primary" />
+      {collapsed ? (
+        <div className="flex flex-col items-center pt-3 pb-2 border-b border-sidebar-border gap-2">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+            <Squirrel className="w-4 h-4 text-primary" />
+          </div>
+          <button
+            onClick={toggle}
+            title="Expand sidebar"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
-        <span className="font-semibold text-sm tracking-wide text-foreground">
-          Squirrel Pi
-        </span>
-      </div>
+      ) : (
+        <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+            <Squirrel className="w-4 h-4 text-primary" />
+          </div>
+          <span className="font-semibold text-sm tracking-wide text-foreground">
+            Squirrel Pi
+          </span>
+          <button
+            onClick={toggle}
+            title="Collapse sidebar"
+            className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav
+        className={cn(
+          'flex-1 py-4 overflow-y-auto',
+          collapsed ? 'px-1.5 space-y-1' : 'px-3 space-y-1'
+        )}
+      >
         {navItems.map((item) => {
           const active =
             item.href === '/'
@@ -58,6 +90,43 @@ export default function Sidebar() {
               ? pathname === '/dashboard'
               : pathname.startsWith(item.href)
           const Icon = item.icon
+
+          if (collapsed) {
+            return (
+              <Link key={item.href} href={item.href} title={item.label}>
+                <div
+                  className={cn(
+                    'w-8 h-8 mx-auto rounded-lg flex items-center justify-center transition-colors cursor-pointer',
+                    active
+                      ? item.accent === 'gold'
+                        ? 'bg-yellow-500/15'
+                        : item.accent === 'red'
+                        ? 'bg-red-500/15'
+                        : 'bg-primary/15'
+                      : 'hover:bg-white/5'
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      'w-5 h-5',
+                      active
+                        ? item.accent === 'gold'
+                          ? 'text-yellow-400'
+                          : item.accent === 'red'
+                          ? 'text-red-400'
+                          : 'text-primary'
+                        : item.accent === 'gold'
+                        ? 'text-yellow-500/70'
+                        : item.accent === 'red'
+                        ? 'text-red-500/70'
+                        : 'text-muted-foreground'
+                    )}
+                  />
+                </div>
+              </Link>
+            )
+          }
+
           return (
             <Link key={item.href} href={item.href}>
               <motion.div
@@ -99,29 +168,45 @@ export default function Sidebar() {
       </nav>
 
       {/* Go Live */}
-      <div className="px-3 pb-4">
-        <Link href="/go-live">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-3 px-3 py-3 rounded-lg bg-primary/10 border border-primary/20 cursor-pointer group glow-green-sm hover:bg-primary/15 transition-all"
-          >
-            <span className="relative flex h-3 w-3 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
-            </span>
-            <span className="text-sm font-semibold text-primary">Go Live</span>
-            <Zap className="w-3.5 h-3.5 text-primary ml-auto" />
-          </motion.div>
+      <div className={cn('pb-4', collapsed ? 'px-1.5' : 'px-3')}>
+        <Link href="/go-live" title="Go Live">
+          {collapsed ? (
+            <div className="w-8 h-8 mx-auto rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center cursor-pointer hover:bg-primary/15 transition-colors">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
+              </span>
+            </div>
+          ) : (
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-3 px-3 py-3 rounded-lg bg-primary/10 border border-primary/20 cursor-pointer group glow-green-sm hover:bg-primary/15 transition-all"
+            >
+              <span className="relative flex h-3 w-3 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
+              </span>
+              <span className="text-sm font-semibold text-primary">Go Live</span>
+              <Zap className="w-3.5 h-3.5 text-primary ml-auto" />
+            </motion.div>
+          )}
         </Link>
       </div>
 
       {/* User */}
-      <div className="px-4 py-4 border-t border-sidebar-border flex items-center gap-3">
+      <div
+        className={cn(
+          'border-t border-sidebar-border flex items-center',
+          collapsed ? 'px-2 py-3 justify-center' : 'px-4 py-4 gap-3'
+        )}
+      >
         <UserButton />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground truncate">Account</p>
-        </div>
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground truncate">Account</p>
+          </div>
+        )}
       </div>
     </aside>
   )
