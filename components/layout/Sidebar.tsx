@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -34,7 +35,17 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const { collapsed, toggle } = useSidebar()
+  const { collapsed, toggle, setCollapsed } = useSidebar()
+  const autoCollapsed = useRef(false)
+
+  useEffect(() => {
+    if (pathname.startsWith('/builder') && !autoCollapsed.current) {
+      autoCollapsed.current = true
+      setCollapsed(true)
+    } else if (!pathname.startsWith('/builder')) {
+      autoCollapsed.current = false
+    }
+  }, [pathname, setCollapsed])
 
   return (
     <aside
