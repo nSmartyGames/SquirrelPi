@@ -331,16 +331,7 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
           {/* ── Floating tool sidebar ── */}
           {sidebarOpen ? (
             <aside className="absolute left-0 top-0 h-full w-56 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col gap-4 p-4 overflow-y-auto shadow-xl">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Theme</p>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  title="Collapse sidebar"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-              </div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Theme</p>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -380,14 +371,7 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
               </div>
             </aside>
           ) : (
-            <aside className="absolute left-0 top-0 h-full w-10 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col items-center py-3 gap-3 shadow-xl">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                title="Expand tools"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            <aside className="absolute left-0 top-0 h-full w-10 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col items-center py-4 gap-3 shadow-xl">
               <div title="Color Palette" className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Palette className="w-3.5 h-3.5 text-primary" />
               </div>
@@ -396,6 +380,16 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
               </div>
             </aside>
           )}
+
+          {/* ── Tool sidebar collapse toggle — centered on separator ── */}
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            title={sidebarOpen ? 'Collapse tools' : 'Expand tools'}
+            className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground z-30 transition-colors"
+            style={{ left: sidebarOpen ? '212px' : '28px', transition: 'left 200ms ease, color 150ms' }}
+          >
+            {sidebarOpen ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          </button>
 
           {/* ── Toolbar (actions bar — not collapsible) ── */}
           <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card/60 shrink-0 flex-wrap">

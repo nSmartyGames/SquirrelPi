@@ -54,19 +54,21 @@ export default function Sidebar() {
         collapsed ? 'w-11' : 'w-[20%] min-w-[200px] max-w-[260px]'
       )}
     >
+      {/* Collapse toggle — centered on the right border */}
+      <button
+        onClick={toggle}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-sidebar border border-sidebar-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-border/50 z-50 transition-colors"
+      >
+        {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+      </button>
+
       {/* Logo */}
       {collapsed ? (
-        <div className="flex flex-col items-center pt-3 pb-2 border-b border-sidebar-border gap-2">
+        <div className="flex items-center justify-center py-5 border-b border-sidebar-border">
           <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
             <Squirrel className="w-4 h-4 text-primary" />
           </div>
-          <button
-            onClick={toggle}
-            title="Expand sidebar"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
         </div>
       ) : (
         <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
@@ -76,13 +78,6 @@ export default function Sidebar() {
           <span className="font-semibold text-sm tracking-wide text-foreground">
             Squirrel Pi
           </span>
-          <button
-            onClick={toggle}
-            title="Collapse sidebar"
-            className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
         </div>
       )}
 
