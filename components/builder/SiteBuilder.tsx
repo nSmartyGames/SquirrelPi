@@ -20,6 +20,7 @@ interface ClaudeMsg  { role: 'user' | 'assistant'; content: string }
 interface SiteBuilderProps {
   initialHtml?: string
   isPro?: boolean
+  membershipTier?: 'free' | 'pro' | 'pro_max'
   promptsUsed?: number
 }
 
