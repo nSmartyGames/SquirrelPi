@@ -32,9 +32,10 @@ interface DashboardContentProps {
   websites: Website[]
   newWebsiteUrl?: string
   partnerWebsites?: Website[]
+  showPartnerSites?: boolean
 }
 
-export default function DashboardContent({ userId, websites, newWebsiteUrl, partnerWebsites = [] }: DashboardContentProps) {
+export default function DashboardContent({ userId, websites, newWebsiteUrl, partnerWebsites = [], showPartnerSites = false }: DashboardContentProps) {
   const stats = [
     { label: 'Websites', value: String(websites.length), icon: Globe, color: 'text-emerald-400' },
     { label: 'Templates', value: String(new Set(websites.map(w => w.template_id).filter(Boolean)).size), icon: ShoppingBag, color: 'text-blue-400' },
@@ -201,9 +202,15 @@ export default function DashboardContent({ userId, websites, newWebsiteUrl, part
       )}
 
       {/* Partner Sites (admin-only) */}
-      {partnerWebsites.length > 0 && (
+      {showPartnerSites && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Partner Sites</h2>
+          {partnerWebsites.length === 0 && (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center">
+              <Handshake className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No partner sites yet</p>
+            </div>
+          )}
           {partnerWebsites.map((site, i) => {
             let businessName = site.external_tenant_id
             try {

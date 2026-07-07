@@ -32,6 +32,7 @@ export default async function DashboardPage({
         websites={websites}
         newWebsiteUrl={params.website}
         partnerWebsites={partnerWebsites}
+        showPartnerSites={!!canViewPartnerSites}
       />
     </>
   )
