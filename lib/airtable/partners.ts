@@ -1,5 +1,3 @@
-'use server'
-
 import { createHash } from 'crypto'
 import base, { Tables, type AirtableRecord } from './client'
 import type { Partner } from '@/types'
