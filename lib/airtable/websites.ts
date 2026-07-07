@@ -53,6 +53,13 @@ export async function getWebsiteByPartnerTenant(
   return records.length > 0 ? mapWebsite(records[0]) : null
 }
 
+export async function getPartnerWebsites(): Promise<Website[]> {
+  const records = await base()(Tables.WEBSITES)
+    .select({ filterByFormula: `NOT({partner_id}='')` })
+    .all()
+  return records.map(mapWebsite)
+}
+
 export async function createWebsite(data: Omit<Website, 'website_id'>): Promise<Website> {
   const record = await base()(Tables.WEBSITES).create(data as unknown as Partial<Airtable.FieldSet>)
   return mapWebsite(record)

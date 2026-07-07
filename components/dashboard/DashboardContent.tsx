@@ -16,6 +16,7 @@ import {
   Activity,
   ExternalLink,
   CheckCircle2,
+  Handshake,
   X,
 } from 'lucide-react'
 import type { Website } from '@/types'
@@ -30,9 +31,10 @@ interface DashboardContentProps {
   userId: string
   websites: Website[]
   newWebsiteUrl?: string
+  partnerWebsites?: Website[]
 }
 
-export default function DashboardContent({ userId, websites, newWebsiteUrl }: DashboardContentProps) {
+export default function DashboardContent({ userId, websites, newWebsiteUrl, partnerWebsites = [] }: DashboardContentProps) {
   const stats = [
     { label: 'Websites', value: String(websites.length), icon: Globe, color: 'text-emerald-400' },
     { label: 'Templates', value: String(new Set(websites.map(w => w.template_id).filter(Boolean)).size), icon: ShoppingBag, color: 'text-blue-400' },
@@ -195,6 +197,47 @@ export default function DashboardContent({ userId, websites, newWebsiteUrl }: Da
               )}
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Partner Sites (admin-only) */}
+      {partnerWebsites.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Partner Sites</h2>
+          {partnerWebsites.map((site, i) => {
+            let businessName = site.external_tenant_id
+            try {
+              businessName = site.business_data ? JSON.parse(site.business_data).name : businessName
+            } catch {}
+            return (
+              <motion.div
+                key={site.website_id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-xl border border-border bg-card p-4 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Handshake className="w-5 h-5 text-purple-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{businessName}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {site.partner_id} · {site.vertical} · {new Date(site.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+                <Badge
+                  className={
+                    site.html_content
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]'
+                      : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 text-[10px]'
+                  }
+                >
+                  {site.html_content ? 'Generated' : 'Pending'}
+                </Badge>
+              </motion.div>
+            )
+          })}
         </div>
       )}
 
