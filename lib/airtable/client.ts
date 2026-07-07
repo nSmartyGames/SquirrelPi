@@ -10,6 +10,7 @@ export const Tables = {
   WEBSITES: 'Websites',
   DOMAINS: 'Domains',
   AI_PROJECTS: 'AI Projects',
+  PARTNERS: 'Partners',
 } as const
 
 function getBase() {

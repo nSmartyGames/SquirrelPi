@@ -37,6 +37,33 @@ export interface Website {
   hosting_status: 'none' | 'pending' | 'active'
   publish_status: 'draft' | 'published' | 'unpublished'
   created_at: string
+  partner_id?: string
+  external_tenant_id?: string
+  vertical?: string
+  business_data?: string
+}
+
+export interface Partner {
+  partner_id: string
+  name: string
+  api_key_hash: string
+  revenue_share_pct: number
+  active: boolean
+  created_at: string
+}
+
+export interface PartnerBusinessData {
+  name: string
+  industry?: string
+  services?: string[]
+  pricing?: string
+  description?: string
+  location?: string
+  hours?: string
+  contact?: { email?: string; phone?: string }
+  logo?: string
+  colors?: string[]
+  social?: Record<string, string>
 }
 
 export interface Domain {

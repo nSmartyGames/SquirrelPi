@@ -15,6 +15,10 @@ function mapWebsite(record: AirtableRecord): Website {
     hosting_status: record.get('hosting_status') as Website['hosting_status'],
     publish_status: record.get('publish_status') as Website['publish_status'],
     created_at: record.get('created_at') as string,
+    partner_id: record.get('partner_id') as string | undefined,
+    external_tenant_id: record.get('external_tenant_id') as string | undefined,
+    vertical: record.get('vertical') as string | undefined,
+    business_data: record.get('business_data') as string | undefined,
   }
 }
 
@@ -30,6 +34,23 @@ export async function getWebsitesByUser(userId: string): Promise<Website[]> {
     .select({ filterByFormula: `{owner_id}='${userId}'` })
     .all()
   return records.map(mapWebsite)
+}
+
+function escapeFormulaValue(value: string): string {
+  return value.replace(/'/g, "\\'")
+}
+
+export async function getWebsiteByPartnerTenant(
+  partnerId: string,
+  externalTenantId: string
+): Promise<Website | null> {
+  const records = await base()(Tables.WEBSITES)
+    .select({
+      filterByFormula: `AND({partner_id}='${escapeFormulaValue(partnerId)}', {external_tenant_id}='${escapeFormulaValue(externalTenantId)}')`,
+      maxRecords: 1,
+    })
+    .all()
+  return records.length > 0 ? mapWebsite(records[0]) : null
 }
 
 export async function createWebsite(data: Omit<Website, 'website_id'>): Promise<Website> {
