@@ -629,7 +629,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                       <button
                         key={n}
                         onClick={() => setSectionCols(n)}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all p-[5px] ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                        className={`flex-1 rounded-xl text-sm font-bold border transition-all p-[5px] ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
                       >
                         {n}
                       </button>
@@ -648,7 +648,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                     <button
                       key={type}
                       onClick={() => setSectionType(type)}
-                      className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold border transition-all p-[5px] ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl text-xs font-semibold border transition-all p-[5px] ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
                     >
                       <Icon className="w-4 h-4" />
                       {label}
@@ -657,7 +657,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end pt-3 border-t border-border p-[5px]">
+              <div className="flex gap-2 justify-end border-t border-border p-[5px]">
                 <button
                   onClick={() => setModal(null)}
                   className="rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors p-[5px]"
