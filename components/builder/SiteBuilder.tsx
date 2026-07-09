@@ -596,7 +596,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl p-7 w-[26rem] space-y-6 shadow-2xl"
+              className="bg-card border border-border rounded-2xl p-1.5 w-[26rem] space-y-6 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-4">
