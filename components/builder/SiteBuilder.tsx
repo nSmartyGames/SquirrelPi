@@ -596,10 +596,11 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl p-[5px] w-[26rem] space-y-6 shadow-2xl"
+              className="bg-card border border-border rounded-2xl w-[26rem] space-y-6 shadow-2xl"
+              style={{ padding: '5px' }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-start justify-between gap-4 p-[5px]">
+              <div className="flex items-start justify-between gap-4" style={{ padding: '5px' }}>
                 <div className="space-y-1">
                   <h3 className="text-lg font-semibold text-foreground">
                     {modal === 'column-add' ? 'Add to column' : 'Add Section'}
@@ -612,14 +613,15 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                 </div>
                 <button
                   onClick={() => setModal(null)}
-                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors p-[5px]"
+                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                  style={{ padding: '5px' }}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {modal === 'section' && sectionType !== 'form' && (
-                <div className="space-y-2.5 p-[5px]">
+                <div className="space-y-2.5" style={{ padding: '5px' }}>
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Columns3 className="w-3.5 h-3.5" />
                     Columns
@@ -629,7 +631,8 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                       <button
                         key={n}
                         onClick={() => setSectionCols(n)}
-                        className={`flex-1 rounded-xl text-sm font-bold border transition-all p-[5px] ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                        className={`flex-1 rounded-xl text-sm font-bold border transition-all ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                        style={{ padding: '5px' }}
                       >
                         {n}
                       </button>
@@ -638,7 +641,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                 </div>
               )}
 
-              <div className="space-y-2.5 p-[5px]">
+              <div className="space-y-2.5" style={{ padding: '5px' }}>
                 <div className="grid grid-cols-3 gap-2.5">
                   {([
                     { type: 'card' as const, label: 'Card', icon: Square },
@@ -648,7 +651,8 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                     <button
                       key={type}
                       onClick={() => setSectionType(type)}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl text-xs font-semibold border transition-all p-[5px] ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl text-xs font-semibold border transition-all ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                      style={{ padding: '5px' }}
                     >
                       <Icon className="w-4 h-4" />
                       {label}
@@ -657,16 +661,17 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end border-t border-border p-[5px]">
+              <div className="flex gap-2 justify-end border-t border-border" style={{ padding: '5px' }}>
                 <button
                   onClick={() => setModal(null)}
-                  className="rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors p-[5px]"
+                  className="rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                  style={{ padding: '5px' }}
                 >
                   Cancel
                 </button>
                 <Button
                   size="sm"
-                  className="p-[5px]"
+                  style={{ padding: '5px' }}
                   onClick={modal === 'column-add' ? insertIntoColumn : insertSection}
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
