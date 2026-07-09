@@ -7,7 +7,6 @@ import {
   ChevronLeft, ChevronRight, Type, Square, MousePointerClick, FileText, Columns3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 const FREE_PROMPT_LIMIT = 10
 
@@ -597,13 +596,10 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className={cn(
-                'bg-card border border-border rounded-2xl w-[26rem] space-y-6 shadow-2xl',
-                modal === 'column-add' ? 'p-5' : 'p-1.5'
-              )}
+              className="bg-card border border-border rounded-2xl p-[5px] w-[26rem] space-y-6 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
-              <div className={cn('flex items-start justify-between gap-4', modal === 'column-add' && 'p-5')}>
+              <div className="flex items-start justify-between gap-4 p-[5px]">
                 <div className="space-y-1">
                   <h3 className="text-lg font-semibold text-foreground">
                     {modal === 'column-add' ? 'Add to column' : 'Add Section'}
@@ -616,17 +612,14 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                 </div>
                 <button
                   onClick={() => setModal(null)}
-                  className={cn(
-                    'shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors',
-                    modal === 'column-add' && 'p-5'
-                  )}
+                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors p-[5px]"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {modal === 'section' && sectionType !== 'form' && (
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 p-[5px]">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Columns3 className="w-3.5 h-3.5" />
                     Columns
@@ -636,7 +629,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                       <button
                         key={n}
                         onClick={() => setSectionCols(n)}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all p-[5px] ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
                       >
                         {n}
                       </button>
@@ -645,46 +638,35 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
                 </div>
               )}
 
-              {modal === 'section' && (
-                <div className="space-y-2.5">
-                  <p className="text-xs font-medium text-muted-foreground">Element type</p>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {([
-                      { type: 'card' as const, label: 'Card', icon: Square },
-                      { type: 'button' as const, label: 'Button', icon: MousePointerClick },
-                      { type: 'form' as const, label: 'Form', icon: FileText },
-                    ]).map(({ type, label, icon: Icon }) => (
-                      <button
-                        key={type}
-                        onClick={() => setSectionType(type)}
-                        className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold border transition-all ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
+              <div className="space-y-2.5 p-[5px]">
+                <div className="grid grid-cols-3 gap-2.5">
+                  {([
+                    { type: 'card' as const, label: 'Card', icon: Square },
+                    { type: 'button' as const, label: 'Button', icon: MousePointerClick },
+                    { type: 'form' as const, label: 'Form', icon: FileText },
+                  ]).map(({ type, label, icon: Icon }) => (
+                    <button
+                      key={type}
+                      onClick={() => setSectionType(type)}
+                      className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold border transition-all p-[5px] ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
 
-              <div
-                className={cn(
-                  'flex gap-2 justify-end pt-3 border-t border-border',
-                  modal === 'column-add' && 'p-5'
-                )}
-              >
+              <div className="flex gap-2 justify-end pt-3 border-t border-border p-[5px]">
                 <button
                   onClick={() => setModal(null)}
-                  className={cn(
-                    'rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors',
-                    modal === 'column-add' ? 'p-5' : 'px-4 py-2'
-                  )}
+                  className="rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors p-[5px]"
                 >
                   Cancel
                 </button>
                 <Button
                   size="sm"
-                  className={cn(modal === 'column-add' && 'p-5')}
+                  className="p-[5px]"
                   onClick={modal === 'column-add' ? insertIntoColumn : insertSection}
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
