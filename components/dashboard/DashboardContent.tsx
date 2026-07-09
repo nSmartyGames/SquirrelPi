@@ -17,6 +17,7 @@ import {
   ExternalLink,
   CheckCircle2,
   Handshake,
+  Hammer,
   X,
 } from 'lucide-react'
 import type { Website } from '@/types'
@@ -190,8 +191,12 @@ export default function DashboardContent({ userId, websites, newWebsiteUrl, part
                 </p>
               </div>
               <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">Live</Badge>
+              <a href={`/builder?siteId=${site.website_id}`} title="Build"
+                className="text-muted-foreground hover:text-primary transition-colors">
+                <Hammer className="w-4 h-4" />
+              </a>
               {site.domain && (
-                <a href={site.domain} target="_blank" rel="noopener noreferrer"
+                <a href={site.domain} target="_blank" rel="noopener noreferrer" title="Open website"
                   className="text-muted-foreground hover:text-primary transition-colors">
                   <ExternalLink className="w-4 h-4" />
                 </a>

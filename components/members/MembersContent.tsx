@@ -89,18 +89,15 @@ export default function MembersContent({ userId }: MembersContentProps) {
     if (!siteName.trim()) return
     setDeploying(true)
     try {
-      const res = await fetch('/api/publish', {
+      const res = await fetch('/api/website/free', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectName: siteName.trim().toLowerCase().replace(/\s+/g, '-'),
-          siteName: siteName.trim(),
-        }),
+        body: JSON.stringify({ siteName: siteName.trim() }),
       })
       const data = await res.json()
-      setDeployResult({ url: data.pagesUrl || data.url })
+      setDeployResult({ url: data.url })
     } catch {
-      setDeployResult({ url: 'Deployment failed. Check CF credentials.' })
+      setDeployResult({ url: 'Deployment failed.' })
     }
     setDeploying(false)
   }

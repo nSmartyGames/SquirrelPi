@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Palette, Plus, Mail, X, Send, Zap, ChevronDown, ChevronUp, Crown, LayoutGrid,
-  ChevronLeft, ChevronRight, Type,
+  ChevronLeft, ChevronRight, Type, Square, MousePointerClick, FileText, Columns3,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -19,6 +19,7 @@ interface ClaudeMsg  { role: 'user' | 'assistant'; content: string }
 
 interface SiteBuilderProps {
   initialHtml?: string
+  siteId?: string
   isPro?: boolean
   membershipTier?: 'free' | 'pro' | 'pro_max'
   promptsUsed?: number
@@ -34,6 +35,19 @@ const palettes: ColorPalette[] = [
   { id: 'rose',   label: 'Rose',   bg: '#1a0a10', text: '#ffe4e6', accent: '#fb7185', border: '#3d1020', swatch: '#fb7185' },
   { id: 'light',  label: 'Light',  bg: '#f8f9fa', text: '#1a1a2e', accent: '#2563eb', border: '#e2e8f0', swatch: '#2563eb' },
 ]
+
+function extractPaletteFromHtml(html: string): ColorPalette | null {
+  const value = (name: string) => {
+    const m = html.match(new RegExp(`--${name}\\s*:\\s*([^;!}]+)`, 'i'))
+    return m ? m[1].trim() : null
+  }
+  const bg = value('bg')
+  const text = value('text')
+  const accent = value('accent')
+  if (!bg || !text || !accent) return null
+  const border = value('border') ?? accent
+  return { id: 'loaded', label: 'Loaded', bg, text, accent, border, swatch: accent }
+}
 
 function buildPaletteOverride(p: ColorPalette): string {
   return `:root{--bg:${p.bg}!important;--bg2:${p.bg}!important;--bg3:${p.bg}!important;--text:${p.text}!important;--muted:${p.text}99!important;--accent:${p.accent}!important;--accent2:${p.accent}!important;--border:${p.border}!important;--radius:12px;}body,html{background:${p.bg}!important;color:${p.text}!important;}`
@@ -81,6 +95,11 @@ function buildContactSection(): string {
 
 function stripBuilderUI(html: string): string {
   return html.replace(/<button[^>]*data-squirrel-add[^>]*>[\s\S]*?<\/button>/g, '')
+}
+
+function buildDeployHtml(html: string, palette: ColorPalette): string {
+  const { styles, body } = parseHtml(html)
+  return reconstructHtml(stripBuilderUI(body), styles, palette)
 }
 
 // ── WebsiteEditor ─────────────────────────────────────────────────────────────
@@ -153,8 +172,14 @@ function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: Webs
 // ── Main component ────────────────────────────────────────────────────────────
 type ModalType = 'section' | 'column-add' | null
 
-export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
-  const [palette, setPalette] = useState<ColorPalette>(palettes[0])
+export default function SiteBuilder({ initialHtml, siteId, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
+  const [palette, setPalette] = useState<ColorPalette>(
+    () => (initialHtml && extractPaletteFromHtml(initialHtml)) || palettes[0]
+  )
+  const availablePalettes = useMemo(
+    () => (palette.id === 'loaded' ? [palette, ...palettes] : palettes),
+    [palette]
+  )
   const [siteTitle, setSiteTitle] = useState('My Website')
   const [modal, setModal] = useState<ModalType>(null)
   const [sectionCols, setSectionCols] = useState(2)
@@ -281,13 +306,13 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
     setDeploying(true)
     setDeployUrl('')
     try {
-      const res = await fetch('/api/publish', {
+      const res = await fetch('/api/website/free', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName: siteTitle, siteName: siteTitle, htmlContent: stripBuilderUI(generatedHtml) }),
+        body: JSON.stringify({ siteId, siteName: siteTitle, htmlContent: buildDeployHtml(generatedHtml, palette) }),
       })
       const data = await res.json()
-      if (data.pagesUrl) setDeployUrl(data.pagesUrl)
+      if (data.url) setDeployUrl(data.url)
     } catch { /* silent */ } finally { setDeploying(false) }
   }
 
@@ -297,13 +322,13 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
     setHandoverUrl('')
     setEmailSent(false)
     try {
-      const res = await fetch('/api/publish', {
+      const res = await fetch('/api/website/free', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectName: siteTitle, siteName: siteTitle, htmlContent: stripBuilderUI(generatedHtml) }),
+        body: JSON.stringify({ siteId, siteName: siteTitle, htmlContent: buildDeployHtml(generatedHtml, palette) }),
       })
       const data = await res.json()
-      if (data.pagesUrl) setHandoverUrl(data.pagesUrl)
+      if (data.url) setHandoverUrl(data.url)
     } catch { /* silent */ } finally { setHandingOver(false) }
   }
 
@@ -327,72 +352,9 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
         {/* ── Center: canvas ── */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 
-          {/* ── Floating tool sidebar ── */}
-          {sidebarOpen ? (
-            <aside className="absolute left-0 top-0 h-full w-56 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col gap-4 p-4 overflow-y-auto shadow-xl">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Theme</p>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Palette className="w-4 h-4 text-primary shrink-0" />
-                  Color Palette
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {palettes.map(p => (
-                    <button
-                      key={p.id}
-                      title={p.label}
-                      onClick={() => setPalette(p)}
-                      className={`h-9 rounded-lg border-2 transition-all ${palette.id === p.id ? 'border-white scale-105' : 'border-transparent hover:border-white/30'}`}
-                      style={{ background: `linear-gradient(135deg, ${p.bg} 40%, ${p.swatch})` }}
-                    />
-                  ))}
-                </div>
-                <p className="text-[11px] text-muted-foreground">{palette.label}</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Type className="w-4 h-4 text-primary shrink-0" />
-                  Site name
-                </div>
-                <input
-                  type="text"
-                  value={siteTitle}
-                  onChange={e => setSiteTitle(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-lg bg-background/50 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
-                />
-              </div>
-
-              <div className="mt-auto space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tips</p>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">Click any text to edit inline. Use AI console to generate sections.</p>
-              </div>
-            </aside>
-          ) : (
-            <aside className="absolute left-0 top-0 h-full w-10 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col items-center py-4 gap-3 shadow-xl">
-              <div title="Color Palette" className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Palette className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <div title="Site name" className="w-7 h-7 rounded-lg bg-muted/20 flex items-center justify-center">
-                <Type className="w-3.5 h-3.5 text-muted-foreground" />
-              </div>
-            </aside>
-          )}
-
-          {/* ── Tool sidebar collapse toggle — centered on separator ── */}
-          <button
-            onClick={() => setSidebarOpen(o => !o)}
-            title={sidebarOpen ? 'Collapse tools' : 'Expand tools'}
-            className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground z-30 transition-colors"
-            style={{ left: sidebarOpen ? '212px' : '28px', transition: 'left 200ms ease, color 150ms' }}
-          >
-            {sidebarOpen ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          </button>
-
-          {/* ── Toolbar (actions bar — not collapsible) ── */}
+          {/* ── Toolbar (actions bar — always full-width, own row) ── */}
           <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card/60 shrink-0 flex-wrap">
             <button
               onClick={() => setModal('section')}
@@ -445,25 +407,92 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
             </div>
           )}
 
-          {/* Canvas */}
-          <div className="flex-1 overflow-y-auto">
-            {generatedHtml ? (
-              <WebsiteEditor
-                html={generatedHtml}
-                palette={palette}
-                onChange={setGeneratedHtml}
-                editorRef={editorRef}
-                onColumnAdd={handleColumnAdd}
-              />
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center gap-3 text-center p-8">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Palette className="w-7 h-7 text-primary" />
+          {/* ── Floating tool sidebar + canvas ── */}
+          <div className="flex-1 min-h-0 relative overflow-hidden">
+
+            {sidebarOpen ? (
+              <aside className="absolute left-0 top-0 h-full w-56 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col gap-5 p-4 overflow-y-auto shadow-xl">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Theme</p>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Palette className="w-4 h-4 text-primary shrink-0" />
+                    Color Palette
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {availablePalettes.map(p => (
+                      <button
+                        key={p.id}
+                        title={p.label}
+                        onClick={() => setPalette(p)}
+                        className={`h-9 rounded-lg border-2 transition-all ${palette.id === p.id ? 'border-white scale-105' : 'border-transparent hover:border-white/30'}`}
+                        style={{ background: `linear-gradient(135deg, ${p.bg} 40%, ${p.swatch})` }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{palette.label}</p>
                 </div>
-                <p className="text-sm font-semibold text-foreground">Canvas is empty</p>
-                <p className="text-xs text-muted-foreground max-w-xs">Use the AI console below to generate your page, or load a template from the Marketplace.</p>
-              </div>
+
+                <div className="space-y-2 rounded-xl border border-border bg-background/40 p-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Type className="w-4 h-4 text-primary shrink-0" />
+                    Site name
+                  </div>
+                  <input
+                    type="text"
+                    value={siteTitle}
+                    onChange={e => setSiteTitle(e.target.value)}
+                    placeholder="My Website"
+                    className="w-full px-2.5 py-2 rounded-lg bg-background/60 border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
+                  />
+                </div>
+
+                <div className="mt-auto space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tips</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Click any text to edit inline. Use AI console to generate sections.</p>
+                </div>
+              </aside>
+            ) : (
+              <aside className="absolute left-0 top-0 h-full w-10 z-20 border-r border-border bg-card/95 backdrop-blur-sm flex flex-col items-center py-4 gap-3 shadow-xl">
+                <div title="Color Palette" className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Palette className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div title="Site name" className="w-7 h-7 rounded-lg bg-muted/20 flex items-center justify-center">
+                  <Type className="w-3.5 h-3.5 text-muted-foreground" />
+                </div>
+              </aside>
             )}
+
+            {/* ── Tool sidebar collapse toggle — centered on separator ── */}
+            <button
+              onClick={() => setSidebarOpen(o => !o)}
+              title={sidebarOpen ? 'Collapse tools' : 'Expand tools'}
+              className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground z-30 transition-colors"
+              style={{ left: sidebarOpen ? '212px' : '28px', transition: 'left 200ms ease, color 150ms' }}
+            >
+              {sidebarOpen ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            </button>
+
+            {/* Canvas */}
+            <div className="h-full overflow-y-auto">
+              {generatedHtml ? (
+                <WebsiteEditor
+                  html={generatedHtml}
+                  palette={palette}
+                  onChange={setGeneratedHtml}
+                  editorRef={editorRef}
+                  onColumnAdd={handleColumnAdd}
+                />
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center gap-3 text-center p-8">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Palette className="w-7 h-7 text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">Canvas is empty</p>
+                  <p className="text-xs text-muted-foreground max-w-xs">Use the AI console below to generate your page, or load a template from the Marketplace.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -567,25 +596,40 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl p-6 w-80 space-y-5 shadow-xl"
+              className="bg-card border border-border rounded-2xl p-7 w-[26rem] space-y-6 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">
-                  {modal === 'column-add' ? 'Add to column' : 'Add Section'}
-                </h3>
-                <button onClick={() => setModal(null)}><X className="w-4 h-4 text-muted-foreground hover:text-foreground" /></button>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {modal === 'column-add' ? 'Add to column' : 'Add Section'}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {modal === 'column-add'
+                      ? 'Insert a new element into this column.'
+                      : 'Choose a layout and element to insert.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModal(null)}
+                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {modal === 'section' && sectionType !== 'form' && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">Columns</p>
-                  <div className="flex gap-2">
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Columns3 className="w-3.5 h-3.5" />
+                    Columns
+                  </div>
+                  <div className="flex gap-2.5">
                     {[1, 2, 3, 4].map(n => (
                       <button
                         key={n}
                         onClick={() => setSectionCols(n)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold border transition-all ${sectionCols === n ? 'bg-primary/20 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${sectionCols === n ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
                       >
                         {n}
                       </button>
@@ -594,23 +638,33 @@ export default function SiteBuilder({ initialHtml, isPro = false, promptsUsed: i
                 </div>
               )}
 
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">Element type</p>
-                <div className="flex gap-2">
-                  {(['card', 'button', 'form'] as const).map(t => (
+              <div className="space-y-2.5">
+                <p className="text-xs font-medium text-muted-foreground">Element type</p>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {([
+                    { type: 'card' as const, label: 'Card', icon: Square },
+                    { type: 'button' as const, label: 'Button', icon: MousePointerClick },
+                    { type: 'form' as const, label: 'Form', icon: FileText },
+                  ]).map(({ type, label, icon: Icon }) => (
                     <button
-                      key={t}
-                      onClick={() => setSectionType(t)}
-                      className={`flex-1 py-2 rounded-lg text-xs font-semibold border capitalize transition-all ${sectionType === t ? 'bg-primary/20 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                      key={type}
+                      onClick={() => setSectionType(type)}
+                      className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold border transition-all ${sectionType === type ? 'bg-primary/20 border-primary/50 text-primary shadow-sm' : 'border-border text-muted-foreground hover:border-primary/30 hover:bg-primary/5'}`}
                     >
-                      {t === 'form' ? 'Form' : t}
+                      <Icon className="w-4 h-4" />
+                      {label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end pt-1">
-                <button onClick={() => setModal(null)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+              <div className="flex gap-2 justify-end pt-3 border-t border-border">
+                <button
+                  onClick={() => setModal(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                >
+                  Cancel
+                </button>
                 <Button size="sm" onClick={modal === 'column-add' ? insertIntoColumn : insertSection}>
                   <Plus className="w-3.5 h-3.5 mr-1" />
                   {modal === 'column-add' ? 'Add' : 'Insert'}

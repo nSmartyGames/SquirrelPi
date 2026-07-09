@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { LinkButton } from '@/components/ui/link-button'
-import { ShoppingCart, ShoppingBag, Package, Globe, ExternalLink } from 'lucide-react'
+import { ShoppingCart, ShoppingBag, Package, Globe, ExternalLink, Hammer } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { Purchase, Website } from '@/types'
 
@@ -63,8 +63,12 @@ export default function PurchasesContent({ purchases, websites }: PurchasesConte
               <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">
                 {site.hosting_status === 'active' ? 'Live' : site.hosting_status}
               </Badge>
+              <a href={`/builder?siteId=${site.website_id}`} title="Build"
+                className="text-muted-foreground hover:text-primary transition-colors">
+                <Hammer className="w-4 h-4" />
+              </a>
               {site.domain && (
-                <a href={site.domain} target="_blank" rel="noopener noreferrer"
+                <a href={site.domain} target="_blank" rel="noopener noreferrer" title="Open website"
                   className="text-muted-foreground hover:text-primary transition-colors">
                   <ExternalLink className="w-4 h-4" />
                 </a>

@@ -22,6 +22,15 @@ function mapWebsite(record: AirtableRecord): Website {
   }
 }
 
+export async function getWebsiteById(id: string): Promise<Website | null> {
+  try {
+    const record = await base()(Tables.WEBSITES).find(id)
+    return mapWebsite(record)
+  } catch {
+    return null
+  }
+}
+
 export async function getWebsiteBySlug(slug: string): Promise<Website | null> {
   const records = await base()(Tables.WEBSITES)
     .select({ filterByFormula: `{slug}='${slug}'`, maxRecords: 1 })

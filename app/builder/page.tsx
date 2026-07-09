@@ -2,6 +2,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import SiteBuilder from '@/components/builder/SiteBuilder'
 import { getTemplateById } from '@/lib/airtable/templates'
 import { getMembershipByUser } from '@/lib/airtable/memberships'
+import { getWebsitesByUser, getWebsiteById } from '@/lib/airtable/websites'
 import base, { Tables } from '@/lib/airtable/client'
 import { STARTER_TEMPLATES } from '@/lib/templates/starters'
 
@@ -10,11 +11,12 @@ export const metadata = { title: 'Site Builder — Squirrel Pi' }
 export default async function BuilderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ templateId?: string }>
+  searchParams: Promise<{ templateId?: string; siteId?: string }>
 }) {
   const [user, params] = await Promise.all([currentUser(), searchParams])
 
   let initialHtml: string | undefined
+  let siteId: string | undefined
   if (params.templateId) {
     const local = STARTER_TEMPLATES.find(t => t.id === params.templateId)
     if (local) {
@@ -23,6 +25,17 @@ export default async function BuilderPage({
       const remote = await getTemplateById(params.templateId).catch(() => null)
       initialHtml = remote?.bundle_html
     }
+  } else if (params.siteId && user) {
+    const site = await getWebsiteById(params.siteId).catch(() => null)
+    if (site && site.owner_id === user.id) {
+      initialHtml = site.html_content
+      siteId = site.website_id
+    }
+  } else if (user) {
+    const existing = await getWebsitesByUser(user.id).catch(() => [])
+    const site = existing.find(w => w.html_content)
+    initialHtml = site?.html_content
+    siteId = site?.website_id
   }
 
   const membershipTier: 'free' | 'pro' | 'pro_max' = user
@@ -49,6 +62,7 @@ export default async function BuilderPage({
   return (
     <SiteBuilder
       initialHtml={initialHtml}
+      siteId={siteId}
       isPro={isPro}
       membershipTier={membershipTier}
       promptsUsed={promptsUsed}
