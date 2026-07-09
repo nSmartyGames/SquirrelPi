@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -35,17 +34,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const { collapsed, toggle, setCollapsed } = useSidebar()
-  const autoCollapsed = useRef(false)
-
-  useEffect(() => {
-    if (pathname.startsWith('/builder') && !autoCollapsed.current) {
-      autoCollapsed.current = true
-      setCollapsed(true)
-    } else if (!pathname.startsWith('/builder')) {
-      autoCollapsed.current = false
-    }
-  }, [pathname, setCollapsed])
+  const { collapsed, toggle } = useSidebar()
 
   return (
     <aside
@@ -65,20 +54,28 @@ export default function Sidebar() {
 
       {/* Logo */}
       {collapsed ? (
-        <div className="flex items-center justify-center py-5 border-b border-sidebar-border">
+        <Link
+          href="/"
+          title="Home"
+          className="flex items-center justify-center py-5 border-b border-sidebar-border"
+        >
           <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
             <Squirrel className="w-4 h-4 text-primary" />
           </div>
-        </div>
+        </Link>
       ) : (
-        <div className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border">
+        <Link
+          href="/"
+          title="Home"
+          className="flex items-center gap-3 px-5 py-6 border-b border-sidebar-border"
+        >
           <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
             <Squirrel className="w-4 h-4 text-primary" />
           </div>
           <span className="font-semibold text-sm tracking-wide text-foreground">
             Squirrel Pi
           </span>
-        </div>
+        </Link>
       )}
 
       {/* Nav */}
