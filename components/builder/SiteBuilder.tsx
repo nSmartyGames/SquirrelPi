@@ -113,33 +113,39 @@ interface WebsiteEditorProps {
 
 function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: WebsiteEditorProps) {
   const { styles, body } = useMemo(() => parseHtml(html), [html])
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const lastExternalRef = useRef(html)
+  const htmlRef = useRef(html)
   const stylesRef = useRef(styles)
-  stylesRef.current = styles
+  const bodyRef = useRef(body)
+  const paletteRef = useRef(palette)
+  const onChangeRef = useRef(onChange)
+  const onColumnAddRef = useRef(onColumnAdd)
+  const styleElRef = useRef<HTMLStyleElement | null>(null)
+  const paletteStyleElRef = useRef<HTMLStyleElement | null>(null)
+  const [iframeReady, setIframeReady] = useState(false)
 
   useEffect(() => {
-    if (html !== lastExternalRef.current && editorRef.current) {
-      lastExternalRef.current = html
-      editorRef.current.innerHTML = body
-    }
-  }, [html, body, editorRef])
+    htmlRef.current = html
+    stylesRef.current = styles
+    bodyRef.current = body
+    paletteRef.current = palette
+    onChangeRef.current = onChange
+    onColumnAddRef.current = onColumnAdd
+  })
 
-  useEffect(() => {
-    if (editorRef.current && body) {
-      editorRef.current.innerHTML = body
-      lastExternalRef.current = html
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
-    const newBody = e.currentTarget.innerHTML
-    const reconstructed = reconstructHtml(newBody, stylesRef.current, palette)
+  // Live preview renders inside its own document so the generated site's CSS
+  // (e.g. `*{padding:0}` resets bundled in every template) can't leak out and
+  // clobber the builder chrome's Tailwind utility classes.
+  const handleInput = useCallback(() => {
+    if (!editorRef.current) return
+    const newBody = editorRef.current.innerHTML
+    const reconstructed = reconstructHtml(newBody, stylesRef.current, paletteRef.current)
     lastExternalRef.current = reconstructed
-    onChange(reconstructed)
-  }, [onChange, palette])
+    onChangeRef.current(reconstructed)
+  }, [editorRef])
 
-  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = useCallback((e: MouseEvent) => {
     const target = e.target as HTMLElement
     const addBtn = target.hasAttribute('data-squirrel-add')
       ? target
@@ -148,24 +154,81 @@ function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: Webs
       e.preventDefault()
       e.stopPropagation()
       const col = addBtn.closest('[data-squirrel-col]') as HTMLElement | null
-      if (col && onColumnAdd) onColumnAdd(col)
+      if (col && onColumnAddRef.current) onColumnAddRef.current(col)
     }
-  }, [onColumnAdd])
+  }, [])
 
-  const paletteOverride = buildPaletteOverride(palette)
+  const handleIframeLoad = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument
+    if (!doc || !doc.head || !doc.body) return
+
+    const styleEl = doc.createElement('style')
+    styleEl.textContent = stylesRef.current
+    doc.head.appendChild(styleEl)
+    styleElRef.current = styleEl
+
+    const paletteStyleEl = doc.createElement('style')
+    paletteStyleEl.textContent = buildPaletteOverride(paletteRef.current)
+    doc.head.appendChild(paletteStyleEl)
+    paletteStyleElRef.current = paletteStyleEl
+
+    doc.body.style.margin = '0'
+
+    const theme = doc.createElement('div')
+    theme.id = 'website-theme'
+    theme.style.background = paletteRef.current.bg
+    theme.style.minHeight = '100%'
+    doc.body.appendChild(theme)
+
+    const editable = doc.createElement('div')
+    editable.contentEditable = 'true'
+    editable.style.outline = 'none'
+    editable.style.minHeight = '100vh'
+    editable.innerHTML = bodyRef.current
+    theme.appendChild(editable)
+
+    editable.addEventListener('input', handleInput)
+    editable.addEventListener('click', handleClick)
+
+    editorRef.current = editable
+    lastExternalRef.current = htmlRef.current
+    setIframeReady(true)
+  }, [editorRef, handleInput, handleClick])
+
+  // Apply external content changes (AI regeneration, template load, /clean) —
+  // edits typed inside the iframe are skipped since they already match.
+  useEffect(() => {
+    if (!iframeReady || !editorRef.current) return
+    if (html !== lastExternalRef.current) {
+      lastExternalRef.current = html
+      editorRef.current.innerHTML = body
+    }
+  }, [html, body, iframeReady, editorRef])
+
+  // Keep the iframe's stylesheet in sync with the site's own <style> content
+  useEffect(() => {
+    if (styleElRef.current) styleElRef.current.textContent = styles
+  }, [styles, iframeReady])
+
+  // Keep palette (CSS var overrides + background) in sync
+  useEffect(() => {
+    if (paletteStyleElRef.current) paletteStyleElRef.current.textContent = buildPaletteOverride(palette)
+    const theme = iframeRef.current?.contentDocument?.getElementById('website-theme')
+    if (theme) theme.style.background = palette.bg
+  }, [palette, iframeReady])
+
+  useEffect(() => {
+    return () => { editorRef.current = null }
+  }, [editorRef])
 
   return (
-    <div id="website-theme" style={{ background: palette.bg, minHeight: '100%' }}>
-      <style dangerouslySetInnerHTML={{ __html: styles + '\n' + paletteOverride }} />
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onClick={handleClick}
-        style={{ outline: 'none', minHeight: '100vh' }}
-      />
-    </div>
+    <iframe
+      ref={iframeRef}
+      title="Site preview"
+      srcDoc="<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body></body></html>"
+      onLoad={handleIframeLoad}
+      style={{ width: '100%', height: '100%', border: 0, display: 'block' }}
+    />
   )
 }
 
