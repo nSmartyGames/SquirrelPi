@@ -267,11 +267,16 @@ export default function CampaignsContent() {
         useCORS: true,
         backgroundColor: '#0a0a14',
       })
-      const url = canvas.toDataURL('image/png')
+      const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+      if (!blob) throw new Error('Failed to generate PNG')
+      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = `localbizpro-${DAYS[dayIdx].toLowerCase()}-card.png`
+      document.body.appendChild(a)
       a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
     } finally {
       el.style.transform = prevTransform
       setDownloading(false)
@@ -333,11 +338,16 @@ export default function CampaignsContent() {
         const canvas = await html2canvas(previewRef.current, {
           width: 1080, height: 1080, scale: 1, useCORS: true, backgroundColor: '#0a0a14',
         })
-        const url = canvas.toDataURL('image/png')
+        const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+        if (!blob) continue
+        const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
         a.download = `localbizpro-${DAYS[i].toLowerCase()}-card.png`
+        document.body.appendChild(a)
         a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
         await new Promise(r => setTimeout(r, 200))
       }
     } finally {
