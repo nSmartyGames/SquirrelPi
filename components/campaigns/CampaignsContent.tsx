@@ -11,6 +11,18 @@ const DIM = '#6478a0'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+// One distinct background per day-of-week slot — independent of theme text,
+// so AI-generated copy never affects which background shows.
+const DAY_BACKGROUNDS = [
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/mon-bg-MDcPTXxC3J61lvLBQ5rJNO5dMeuRXs.jpg',
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/tue-bg-ZUrJQx7KmvCozm7x2r4WdBNpOYYjwN.jpg',
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/wed-bg-QzaBplxteJexG45OzFFHwCtJ9IQE1u.jpg',
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/thu-bg-s1LQKKEFe88ibgxUxEjmmFJAqWZocy.jpg',
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/fri-bg-SZR7N412O04JEOnaq2l3Kd8ocoftiW.jpg',
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/sat-bg-HbMPAzNQefyXwbKTmyZFKyFvnrtcn1.jpg',
+  'https://bygpnag8tlqsfwx9.public.blob.vercel-storage.com/campaign-backgrounds/sun-bg-G9IkUhWXTXfNrOaHNtfoPbvLL1RxkC.jpg',
+]
+
 interface Theme {
   headline: string
   sub: string
@@ -98,7 +110,7 @@ interface CardFields {
   badge: string
 }
 
-function CardPreview({ fields }: { fields: CardFields }) {
+function CardPreview({ fields, bgImage }: { fields: CardFields; bgImage: string }) {
   const headline = fields.headline.split('\n')
   const sub = fields.sub.split('\n')
 
@@ -115,7 +127,9 @@ function CardPreview({ fields }: { fields: CardFields }) {
 
       <div className={styles.cardMain}>
         <div className={styles.cardBox}>
-          <div style={{ display: 'flex', gap: 60, alignItems: 'center' }}>
+          <div className={styles.cardBgImage} style={{ backgroundImage: `url(${bgImage})` }} />
+          <div className={styles.cardBgScrim} />
+          <div style={{ display: 'flex', gap: 60, alignItems: 'center', position: 'relative' }}>
             {/* LEFT */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ lineHeight: 0.9 }}>
@@ -481,7 +495,7 @@ export default function CampaignsContent() {
           }}
         >
           <div ref={previewRef}>
-            <CardPreview fields={fields} />
+            <CardPreview fields={fields} bgImage={DAY_BACKGROUNDS[dayIdx]} />
           </div>
         </div>
       </div>

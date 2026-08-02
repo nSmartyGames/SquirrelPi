@@ -7,6 +7,20 @@
   flex-shrink: 0;
 }
 
+.cardBgImage {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.4;
+}
+
+.cardBgScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(10,10,20,0.95) 0%, rgba(10,10,20,0.8) 45%, rgba(10,10,20,0.4) 100%);
+}
+
 .cardGrid {
   position: absolute;
   inset: 0;
