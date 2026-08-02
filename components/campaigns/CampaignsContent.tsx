@@ -259,7 +259,7 @@ export default function CampaignsContent() {
     const prevTransform = el.style.transform
     try {
       el.style.transform = 'none'
-      const html2canvas = (await import('html2canvas')).default
+      const html2canvas = (await import('html2canvas-pro')).default
       const canvas = await html2canvas(previewRef.current, {
         width: 1080,
         height: 1080,
@@ -286,7 +286,7 @@ export default function CampaignsContent() {
     const prevTransform = el.style.transform
     try {
       el.style.transform = 'none'
-      const html2canvas = (await import('html2canvas')).default
+      const html2canvas = (await import('html2canvas-pro')).default
       const canvas = await html2canvas(previewRef.current, {
         width: 1080,
         height: 1080,
@@ -315,7 +315,7 @@ export default function CampaignsContent() {
 
   const downloadAllDays = useCallback(async () => {
     if (downloading || allProgress || !scaleRef.current) return
-    const html2canvas = (await import('html2canvas')).default
+    const html2canvas = (await import('html2canvas-pro')).default
     const savedFields = { ...fields }
     const savedDay = dayIdx
     const el = scaleRef.current
