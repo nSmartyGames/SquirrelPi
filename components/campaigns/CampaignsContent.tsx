@@ -321,6 +321,8 @@ export default function CampaignsContent() {
   const downloadAllDays = useCallback(async () => {
     if (downloading || allProgress || !scaleRef.current) return
     const html2canvas = (await import('html2canvas-pro')).default
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
     const savedFields = { ...fields }
     const savedDay = dayIdx
     const el = scaleRef.current
@@ -340,16 +342,19 @@ export default function CampaignsContent() {
         })
         const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
         if (!blob) continue
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `localbizpro-${DAYS[i].toLowerCase()}-card.png`
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        URL.revokeObjectURL(url)
-        await new Promise(r => setTimeout(r, 200))
+        zip.file(`localbizpro-${DAYS[i].toLowerCase()}-card.png`, blob)
       }
+
+      setAllProgress('Zipping')
+      const zipBlob = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'localbizpro-weekly-cards.zip'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
     } finally {
       el.style.transform = prevTransform
       setDayIdx(savedDay)
