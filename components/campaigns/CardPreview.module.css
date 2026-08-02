@@ -1,0 +1,174 @@
+.cardScene {
+  width: 1080px;
+  height: 1080px;
+  background: radial-gradient(ellipse at 30% 40%, #12122a 0%, #0a0a14 70%);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cardGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(74,144,217,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,144,217,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.cardOrb1 {
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(74,144,217,0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(80px);
+  top: -100px; left: -100px;
+}
+
+.cardOrb2 {
+  position: absolute;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(100,200,255,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(80px);
+  bottom: -50px; right: 100px;
+}
+
+.cardCorner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border-color: rgba(74,144,217,0.5);
+  border-style: solid;
+}
+
+.cardMain {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardBox {
+  width: 900px;
+  background: linear-gradient(135deg, #111128 0%, #0d0d1e 50%, #111128 100%);
+  border: 1px solid rgba(74,144,217,0.3);
+  border-radius: 24px;
+  padding: 70px 80px 60px;
+  box-shadow: 0 0 60px rgba(74,144,217,0.1), 0 0 120px rgba(74,144,217,0.05), inset 0 1px 0 rgba(255,255,255,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.cardBox::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 80px; right: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4a90d9, #7fc6ff, #4a90d9, transparent);
+  border-radius: 0 0 2px 2px;
+}
+
+.iconBoxCard {
+  width: 64px; height: 64px;
+  border: 1.5px solid #4a90d9;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74,144,217,0.08);
+}
+
+.panel {
+  width: 340px;
+  flex-shrink: 0;
+  background: #0d0d1e;
+  border: 1px solid rgba(74,144,217,0.15);
+  border-radius: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+
+.controlGroup {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(74,144,217,0.1);
+}
+
+.controlLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #6478a0;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.controlInput {
+  width: 100%;
+  background: rgba(74,144,217,0.06);
+  border: 1px solid rgba(74,144,217,0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #f0eacc;
+  font-size: 13px;
+  font-family: Arial, sans-serif;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.controlInput:focus {
+  border-color: #4a90d9;
+}
+
+.dayBtn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid rgba(74,144,217,0.25);
+  background: transparent;
+  color: #6478a0;
+  transition: all 0.15s;
+}
+
+.dayBtn:hover {
+  border-color: #4a90d9;
+  color: #f0eacc;
+}
+
+.dayBtnActive {
+  background: #4a90d9;
+  border-color: #4a90d9;
+  color: #0a0a14;
+}
+
+.dlBtn {
+  width: 100%;
+  padding: 14px;
+  background: #4a90d9;
+  color: #0a0a14;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.dlBtn:hover { opacity: 0.85; }
+.dlBtn:active { opacity: 0.7; }
+.dlBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dlBtnOutline {
+  background: transparent;
+  border: 1.5px solid #4a90d9;
+  color: #4a90d9;
+}

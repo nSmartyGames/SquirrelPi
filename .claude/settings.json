@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"/Users/lucianvirtic/Documents/claude/squirrel-pi/squirrel-pi/.claude/hooks/clerk-init.sh\"",
+            "timeout": 15,
+            "statusMessage": "Checking Clerk auth..."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(clerk *)",
+      "Bash(npx clerk *)"
+    ]
+  }
+}

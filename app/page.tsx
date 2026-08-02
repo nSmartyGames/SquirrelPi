@@ -1,15 +1,8 @@
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
-import AppShell from '@/components/layout/AppShell'
-import HomepageContent from '@/components/layout/HomepageContent'
+import GrowBizProLanding from '@/components/marketing/GrowBizProLanding'
 
-export default async function HomePage() {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
-
-  return (
-    <AppShell>
-      <HomepageContent />
-    </AppShell>
-  )
+// Public marketing homepage — the Grow Biz Pro funnel page.
+// Sign-in and the authenticated app (dashboard, builder, marketplace, etc.)
+// are unchanged and still live behind Clerk auth on their own routes.
+export default function HomePage() {
+  return <GrowBizProLanding />
 }

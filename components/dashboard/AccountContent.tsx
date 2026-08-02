@@ -163,7 +163,15 @@ export default function AccountContent({ name, email, userId, membershipStatus }
               <p className="text-xs font-medium text-foreground">Facebook</p>
               <p className="text-[10px] text-muted-foreground">Not connected</p>
             </div>
-            <Button variant="ghost" size="sm" className="h-6 text-xs px-2">Connect</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs px-2"
+              disabled
+              title="Requires a Meta Developer App (App ID/Secret) — not yet configured for this workspace"
+            >
+              Connect
+            </Button>
           </div>
           <div className="rounded-lg border border-border p-3 flex items-center gap-3">
             <InstagramIcon className="w-4 h-4 text-pink-400" />
@@ -171,9 +179,25 @@ export default function AccountContent({ name, email, userId, membershipStatus }
               <p className="text-xs font-medium text-foreground">Instagram</p>
               <p className="text-[10px] text-muted-foreground">Not connected</p>
             </div>
-            <Button variant="ghost" size="sm" className="h-6 text-xs px-2">Connect</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs px-2"
+              disabled
+              title="Requires a Meta Developer App (App ID/Secret) — not yet configured for this workspace"
+            >
+              Connect
+            </Button>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Auto-posting isn&apos;t wired up yet — it needs a Meta Developer App and an Instagram
+          Business account linked to a Facebook Page. In the meantime, use{' '}
+          <a href="/dashboard/campaigns" className="text-primary underline underline-offset-2 hover:text-primary/80">
+            Campaigns
+          </a>{' '}
+          to generate branded cards and post them manually.
+        </p>
       </motion.div>
     </div>
   )
