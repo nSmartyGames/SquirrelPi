@@ -155,15 +155,15 @@ function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: Webs
   const paletteOverride = buildPaletteOverride(palette)
 
   return (
-    <div id="website-theme" style={{ background: palette.bg, minHeight: '100%' }}>
-      <style dangerouslySetInnerHTML={{ __html: styles + '\n' + paletteOverride }} />
+    <div id="website-theme" style={{ background: palette.bg, minHeight: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
+      <style dangerouslySetInnerHTML={{ __html: styles + '\n' + paletteOverride + '\n#website-theme img,#website-theme video,#website-theme iframe,#website-theme table{max-width:100%;}' }} />
       <div
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}
         onClick={handleClick}
-        style={{ outline: 'none', minHeight: '100vh' }}
+        style={{ outline: 'none', minHeight: '100vh', maxWidth: '100%' }}
       />
     </div>
   )
@@ -474,7 +474,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
             </button>
 
             {/* Canvas */}
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto overflow-x-hidden">
               {generatedHtml ? (
                 <WebsiteEditor
                   html={generatedHtml}
