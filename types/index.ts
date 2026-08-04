@@ -31,6 +31,7 @@ export interface Website {
   website_id: string
   owner_id: string
   template_id: string
+  title?: string
   slug?: string
   domain?: string
   html_content?: string

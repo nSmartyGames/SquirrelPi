@@ -17,6 +17,7 @@ export default async function BuilderPage({
 
   let initialHtml: string | undefined
   let siteId: string | undefined
+  let initialTitle: string | undefined
   if (params.templateId) {
     const local = STARTER_TEMPLATES.find(t => t.id === params.templateId)
     if (local) {
@@ -30,12 +31,14 @@ export default async function BuilderPage({
     if (site && site.owner_id === user.id) {
       initialHtml = site.html_content
       siteId = site.website_id
+      initialTitle = site.title
     }
   } else if (user) {
     const existing = await getWebsitesByUser(user.id).catch(() => [])
     const site = existing.find(w => w.html_content)
     initialHtml = site?.html_content
     siteId = site?.website_id
+    initialTitle = site?.title
   }
 
   const membershipTier: 'free' | 'pro' | 'pro_max' = user
@@ -63,6 +66,7 @@ export default async function BuilderPage({
     <SiteBuilder
       initialHtml={initialHtml}
       siteId={siteId}
+      initialTitle={initialTitle}
       isPro={isPro}
       membershipTier={membershipTier}
       promptsUsed={promptsUsed}

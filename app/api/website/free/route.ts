@@ -29,12 +29,15 @@ export async function POST(request: NextRequest) {
 
   if (existing?.slug) {
     const url = `${process.env.NEXT_PUBLIC_APP_URL}/sites/${existing.slug}`
-    if (body?.htmlContent) {
+    if (body?.htmlContent || body?.siteName) {
       try {
         await updateWebsite(existing.website_id, {
-          html_content: body.htmlContent,
-          hosting_status: 'active',
-          publish_status: 'published',
+          ...(body?.htmlContent && {
+            html_content: body.htmlContent,
+            hosting_status: 'active',
+            publish_status: 'published',
+          }),
+          ...(body?.siteName && { title: body.siteName }),
         })
       } catch {
         return NextResponse.json({ error: 'Database unavailable' }, { status: 503 })
@@ -63,6 +66,7 @@ export async function POST(request: NextRequest) {
     await createWebsite({
       owner_id: userId,
       template_id: '3',
+      title: siteName,
       slug,
       domain: url,
       html_content: html,

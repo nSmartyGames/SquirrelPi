@@ -20,6 +20,7 @@ interface ClaudeMsg  { role: 'user' | 'assistant'; content: string }
 interface SiteBuilderProps {
   initialHtml?: string
   siteId?: string
+  initialTitle?: string
   isPro?: boolean
   membershipTier?: 'free' | 'pro' | 'pro_max'
   promptsUsed?: number
@@ -72,7 +73,7 @@ function reconstructHtml(bodyInner: string, styles: string, palette: ColorPalett
 
 function buildColumnContent(type: SectionElementType): string {
   if (type === 'card') {
-    return `<h3 style="color:var(--accent);font-size:1.1rem;font-weight:700;margin:0 0 0.5rem 0;">Card Title</h3><p style="color:var(--text);opacity:0.7;font-size:0.875rem;margin:0;line-height:1.6;">Add your description here.</p>`
+    return `<h3 style="color:var(--text);font-size:1.35rem;font-weight:800;letter-spacing:-0.01em;line-height:1.15;margin:0 0 0.5rem 0;">Card Title</h3><p style="color:var(--text);opacity:0.65;font-size:0.875rem;margin:0;line-height:1.6;">Add your description here.</p>`
   }
   if (type === 'button') {
     return `<a href="#" style="display:inline-block;background:var(--accent);color:var(--bg);font-weight:700;padding:0.75rem 1.75rem;border-radius:9999px;text-decoration:none;font-size:0.875rem;">Button Text</a>`
@@ -172,7 +173,7 @@ function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: Webs
 // ── Main component ────────────────────────────────────────────────────────────
 type ModalType = 'section' | 'column-add' | null
 
-export default function SiteBuilder({ initialHtml, siteId, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
+export default function SiteBuilder({ initialHtml, siteId, initialTitle, isPro = false, promptsUsed: initialPromptsUsed = 0 }: SiteBuilderProps) {
   const [palette, setPalette] = useState<ColorPalette>(
     () => (initialHtml && extractPaletteFromHtml(initialHtml)) || palettes[0]
   )
@@ -180,7 +181,7 @@ export default function SiteBuilder({ initialHtml, siteId, isPro = false, prompt
     () => (palette.id === 'loaded' ? [palette, ...palettes] : palettes),
     [palette]
   )
-  const [siteTitle, setSiteTitle] = useState('My Website')
+  const [siteTitle, setSiteTitle] = useState(initialTitle || 'My Website')
   const [modal, setModal] = useState<ModalType>(null)
   const [sectionCols, setSectionCols] = useState(2)
   const [sectionType, setSectionType] = useState<SectionElementType>('card')

@@ -9,6 +9,7 @@ function mapWebsite(record: AirtableRecord): Website {
     website_id: record.id,
     owner_id: record.get('owner_id') as string,
     template_id: record.get('template_id') as string,
+    title: record.get('title') as string | undefined,
     slug: record.get('slug') as string | undefined,
     domain: record.get('domain') as string | undefined,
     html_content: record.get('html_content') as string | undefined,
