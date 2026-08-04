@@ -151,7 +151,7 @@ export const GROW_BIZ_PRO_HTML = `
 </section>
 
 <footer>
-  © 2026 allibuild.com — Grow Biz Pro este un serviciu LocalBiz Pro. <a href="mailto:contact@allibuild.com">contact@allibuild.com</a>
+  © 2026 allibuild.com — Grow Biz Pro este un serviciu LocalBiz Pro. <a href="mailto:contact@allibuild.com">contact@allibuild.com</a> · <a href="/privacy">Politica de confidențialitate</a>
 </footer>
 
 </div>
