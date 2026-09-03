@@ -19,7 +19,13 @@ export async function POST(request: NextRequest) {
     if (body?.siteId) {
       const site = await getWebsiteById(body.siteId)
       if (site && site.owner_id === userId) existing = site
-    } else {
+    } else if (!body?.htmlContent) {
+      // No explicit siteId and no authored canvas content — this is a "get/quick-deploy
+      // my default site" request (MarketplaceContent/MembersContent), so it's safe to
+      // reuse the user's first existing site. When htmlContent IS present (the builder
+      // canvas deploying real authored content) but siteId is missing, this means the
+      // canvas was opened fresh from a template — do NOT guess at an existing site to
+      // overwrite; fall through and create a brand-new website instead.
       const sites = await getWebsitesByUser(userId)
       existing = sites.length > 0 ? sites[0] : null
     }

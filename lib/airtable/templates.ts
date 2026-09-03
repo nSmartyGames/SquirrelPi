@@ -37,6 +37,21 @@ export async function getTemplateById(id: string): Promise<Template | null> {
   }
 }
 
+export async function getTemplatesByIds(ids: string[]): Promise<Template[]> {
+  const uniqueIds = Array.from(new Set(ids)).filter(Boolean)
+  if (uniqueIds.length === 0) return []
+  try {
+    const records = await base()(Tables.TEMPLATES)
+      .select({
+        filterByFormula: `OR(${uniqueIds.map(id => `RECORD_ID()='${id}'`).join(',')})`,
+      })
+      .all()
+    return records.map(mapTemplate)
+  } catch {
+    return []
+  }
+}
+
 export async function getFeaturedTemplates(): Promise<Template[]> {
   const records = await base()(Tables.TEMPLATES)
     .select({ filterByFormula: `{published}=TRUE()`, maxRecords: 6 })

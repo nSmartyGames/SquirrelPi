@@ -13,7 +13,7 @@ export default function MainWrapper({ children, className }: Props) {
     <main
       className={className}
       style={{
-        marginLeft: collapsed ? '44px' : 'max(20%, 200px)',
+        marginLeft: collapsed ? '44px' : 'clamp(200px, 20%, 260px)',
         transition: 'margin-left 200ms ease',
       }}
     >

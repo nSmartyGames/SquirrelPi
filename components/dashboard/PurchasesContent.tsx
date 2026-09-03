@@ -1,14 +1,88 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import { LinkButton } from '@/components/ui/link-button'
 import { ShoppingCart, ShoppingBag, Package, Globe, ExternalLink, Hammer } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { Purchase, Website } from '@/types'
+import { STARTER_TEMPLATES } from '@/lib/templates/starters'
 
 interface PurchasesContentProps {
   purchases: Purchase[]
   websites: Website[]
+}
+
+// Extra, purely-local optional field: renders as the card's background image
+// once real preview data is wired in. Falls back to a gradient + icon backdrop.
+type WebsiteWithPreview = Website & { previewImage?: string }
+type PurchaseWithPreview = Purchase & { previewImage?: string }
+
+const CATEGORY_GRADIENTS: Record<string, string> = {
+  professional: 'from-blue-950 via-indigo-900 to-blue-800',
+  basic: 'from-emerald-950 via-teal-900 to-emerald-800',
+  'digital-products': 'from-purple-950 via-fuchsia-900 to-purple-800',
+}
+const DEFAULT_GRADIENT = 'from-slate-900 via-slate-800 to-slate-700'
+
+function StackCard({
+  previewImage,
+  gradient,
+  icon,
+  title,
+  subtitle,
+  statusBadge,
+  actions,
+  delay,
+}: {
+  previewImage?: string
+  gradient: string
+  icon: React.ReactNode
+  title: string
+  subtitle?: string
+  statusBadge?: React.ReactNode
+  actions: React.ReactNode
+  delay: number
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      whileHover={{ y: -4 }}
+      className="group relative rounded-2xl border border-border overflow-hidden aspect-[4/5] flex flex-col justify-end"
+    >
+      {/* Background — real preview image once available, otherwise a rich gradient + icon backdrop */}
+      {previewImage ? (
+        <Image
+          src={previewImage}
+          alt={title}
+          fill
+          className="object-cover object-top transition-transform duration-500 group-hover:scale-110"
+        />
+      ) : (
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+          <div className="text-white/15 transition-transform duration-500 group-hover:scale-110 [&>svg]:w-20 [&>svg]:h-20">
+            {icon}
+          </div>
+        </div>
+      )}
+
+      {/* Permanent bottom-to-top gradient so headline stays readable */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent transition-opacity group-hover:from-black/95" />
+
+      {statusBadge && <div className="absolute top-3 left-3 z-10">{statusBadge}</div>}
+
+      {/* Headline + actions, pinned over the image */}
+      <div className="relative z-10 p-4 flex flex-col gap-3">
+        <div className="min-w-0">
+          <h3 className="font-bold text-white text-base leading-tight tracking-tight drop-shadow-sm truncate">{title}</h3>
+          {subtitle && <p className="text-xs text-white/60 mt-1 truncate">{subtitle}</p>}
+        </div>
+        <div className="flex items-center justify-end gap-2">{actions}</div>
+      </div>
+    </motion.div>
+  )
 }
 
 export default function PurchasesContent({ purchases, websites }: PurchasesContentProps) {
@@ -43,69 +117,82 @@ export default function PurchasesContent({ purchases, websites }: PurchasesConte
       {websites.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Deployed Sites</h2>
-          {websites.map((site, i) => (
-            <motion.div
-              key={site.website_id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-xl border border-border bg-card p-4 flex items-center gap-4"
-            >
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <Globe className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{site.domain || site.slug || site.website_id}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(site.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                </p>
-              </div>
-              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">
-                {site.hosting_status === 'active' ? 'Live' : site.hosting_status}
-              </Badge>
-              <a href={`/builder?siteId=${site.website_id}`} title="Build"
-                className="text-muted-foreground hover:text-primary transition-colors">
-                <Hammer className="w-4 h-4" />
-              </a>
-              {site.domain && (
-                <a href={site.domain} target="_blank" rel="noopener noreferrer" title="Open website"
-                  className="text-muted-foreground hover:text-primary transition-colors">
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-            </motion.div>
-          ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {websites.map((site, i) => {
+              const s = site as WebsiteWithPreview
+              return (
+                <StackCard
+                  key={site.website_id}
+                  delay={i * 0.05}
+                  previewImage={s.previewImage}
+                  gradient={DEFAULT_GRADIENT}
+                  icon={<Globe />}
+                  title={site.domain || site.slug || site.website_id}
+                  subtitle={new Date(site.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  statusBadge={
+                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] backdrop-blur-sm">
+                      {site.hosting_status === 'active' ? 'Live' : site.hosting_status}
+                    </Badge>
+                  }
+                  actions={
+                    <>
+                      <a
+                        href={`/builder?siteId=${site.website_id}`}
+                        title="Build"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/40 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                      >
+                        <Hammer className="w-3.5 h-3.5" />
+                      </a>
+                      {site.domain && (
+                        <a
+                          href={site.domain}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open website"
+                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/40 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </>
+                  }
+                />
+              )
+            })}
+          </div>
         </div>
       )}
 
       {purchases.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Template Purchases</h2>
-          {purchases.map((purchase, i) => (
-            <motion.div
-              key={purchase.purchase_id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-xl border border-border bg-card p-4 flex items-center gap-4"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Package className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">Template #{purchase.template_id}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(purchase.purchase_date).toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric',
-                  })}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs text-muted-foreground">Payment</p>
-                <p className="text-xs font-mono text-foreground truncate max-w-32">{purchase.stripe_payment_id.slice(0, 16)}…</p>
-              </div>
-            </motion.div>
-          ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {purchases.map((purchase, i) => {
+              const p = purchase as PurchaseWithPreview
+              const tmpl = STARTER_TEMPLATES.find(t => t.id === purchase.template_id)
+              return (
+                <StackCard
+                  key={purchase.purchase_id}
+                  delay={i * 0.05}
+                  previewImage={p.previewImage}
+                  gradient={tmpl ? CATEGORY_GRADIENTS[tmpl.category] ?? DEFAULT_GRADIENT : DEFAULT_GRADIENT}
+                  icon={<Package />}
+                  title={tmpl?.title || `Template #${purchase.template_id}`}
+                  subtitle={new Date(purchase.purchase_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  statusBadge={
+                    <Badge variant="secondary" className="text-[10px] uppercase tracking-wider backdrop-blur-sm bg-black/40 text-white border-white/10">
+                      Purchased
+                    </Badge>
+                  }
+                  actions={
+                    <span className="text-[10px] font-mono text-white/70 truncate max-w-[8rem]" title={purchase.stripe_payment_id}>
+                      {purchase.stripe_payment_id.slice(0, 12)}…
+                    </span>
+                  }
+                />
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

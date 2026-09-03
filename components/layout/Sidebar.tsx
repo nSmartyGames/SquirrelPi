@@ -161,7 +161,8 @@ export default function Sidebar() {
                 )}
                 {active && (
                   <motion.div
-                    layoutId="active-pill"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     className={cn(
                       'ml-auto w-1 h-4 rounded-full',
                       item.accent === 'gold' ? 'bg-yellow-400' : item.accent === 'red' ? 'bg-red-400' : 'bg-primary'

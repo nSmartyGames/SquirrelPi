@@ -420,13 +420,13 @@ export default function SiteBuilder({ initialHtml, siteId, initialTitle, isPro =
                     <Palette className="w-4 h-4 text-primary shrink-0" />
                     Color Palette
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="flex flex-wrap gap-1">
                     {availablePalettes.map(p => (
                       <button
                         key={p.id}
                         title={p.label}
                         onClick={() => setPalette(p)}
-                        className={`h-9 rounded-lg border-2 transition-all ${palette.id === p.id ? 'border-white scale-105' : 'border-transparent hover:border-white/30'}`}
+                        className={`h-[11px] w-[11px] shrink-0 rounded-[3px] border transition-all ${palette.id === p.id ? 'border-white scale-125' : 'border-transparent hover:border-white/30'}`}
                         style={{ background: `linear-gradient(135deg, ${p.bg} 40%, ${p.swatch})` }}
                       />
                     ))}

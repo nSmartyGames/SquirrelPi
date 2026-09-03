@@ -46,14 +46,14 @@ const categories = [
 function TemplateGridCard({ template, onBuy, buying }: { template: Template; onBuy: (t: Template) => void; buying: boolean }) {
   const router = useRouter()
   const gradients: Record<string, string> = {
-    professional: 'from-blue-900/30 to-indigo-900/20',
-    basic: 'from-emerald-900/30 to-teal-900/20',
-    'digital-products': 'from-purple-900/30 to-pink-900/20',
+    professional: 'from-blue-950 via-indigo-900 to-blue-800',
+    basic: 'from-emerald-950 via-teal-900 to-emerald-800',
+    'digital-products': 'from-purple-950 via-fuchsia-900 to-purple-800',
   }
   const accents: Record<string, string> = {
-    professional: 'text-blue-400',
-    basic: 'text-emerald-400',
-    'digital-products': 'text-purple-400',
+    professional: 'text-blue-300',
+    basic: 'text-emerald-300',
+    'digital-products': 'text-purple-300',
   }
 
   return (
@@ -63,28 +63,40 @@ function TemplateGridCard({ template, onBuy, buying }: { template: Template; onB
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={{ y: -4 }}
-      className="rounded-xl border border-border bg-card overflow-hidden flex flex-col group"
+      className="group relative rounded-2xl border border-border overflow-hidden aspect-[4/5] flex flex-col justify-end"
     >
-      <div className={`aspect-[16/10] bg-gradient-to-br ${gradients[template.category]} flex items-center justify-center relative`}>
-        <div className="text-center">
-          <div className={`text-xs uppercase tracking-wider font-medium ${accents[template.category]}`}>
-            {template.category.replace('-', ' ')}
-          </div>
-          <div className="text-4xl mt-2">
-            {template.preview_image || (template.type === '3d' ? '🌐' : '🖥️')}
-          </div>
+      {/* Background — big emoji graphic backdrop over a rich per-category gradient */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradients[template.category]} flex items-center justify-center`}>
+        <div className="text-[7rem] leading-none drop-shadow-lg transition-transform duration-500 group-hover:scale-110">
+          {template.preview_image || (template.type === '3d' ? '🌐' : '🖥️')}
         </div>
       </div>
 
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      {/* Permanent bottom-to-top gradient so headline stays readable, deepens on hover */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent transition-opacity group-hover:from-black/95" />
+
+      {/* Top badge */}
+      <div className="absolute top-3 left-3 z-10">
+        <Badge
+          variant="secondary"
+          className={`text-[10px] uppercase tracking-wider capitalize backdrop-blur-sm bg-black/40 border-white/10 ${accents[template.category]}`}
+        >
+          {template.category.replace('-', ' ')}
+        </Badge>
+      </div>
+
+      {/* Headline + action, pinned over the image */}
+      <div className="relative z-10 p-4 flex flex-col gap-3">
         <div>
-          <h3 className="font-semibold text-foreground text-sm">{template.title}</h3>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
+          <h3 className="font-bold text-white text-lg leading-tight tracking-tight drop-shadow-sm">{template.title}</h3>
+          {template.description && (
+            <p className="text-xs text-white/70 mt-1 line-clamp-2">{template.description}</p>
+          )}
         </div>
-        <div className="flex items-center justify-end mt-auto pt-1">
+        <div className="flex items-center justify-end">
           <Button
             size="sm"
-            className="h-7 px-3 text-xs"
+            className="h-8 px-3 text-xs"
             onClick={() => template.price === 0
               ? router.push(`/builder?templateId=${template.template_id}`)
               : onBuy(template)
