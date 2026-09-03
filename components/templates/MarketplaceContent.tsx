@@ -125,12 +125,11 @@ export default function MarketplaceContent() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [buyingId, setBuyingId] = useState<string | null>(null)
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [showSuccess] = useState(() => searchParams.get('success') === 'template')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
     if (searchParams.get('success') === 'template') {
-      setShowSuccess(true)
       router.replace('/marketplace')
     }
   }, [searchParams, router])

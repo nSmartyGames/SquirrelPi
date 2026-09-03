@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — allibuild.com',
@@ -147,9 +148,9 @@ export default function PrivacyPolicyPage() {
       </div>
 
       <div className="mt-16 border-t border-border pt-6 text-xs text-muted-foreground">
-        <a href="/" className="underline hover:text-foreground">
+        <Link href="/" className="underline hover:text-foreground">
           &larr; Back to allibuild.com
-        </a>
+        </Link>
       </div>
     </main>
   )

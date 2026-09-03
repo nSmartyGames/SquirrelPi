@@ -192,7 +192,7 @@ export default function MembersContent({ userId }: MembersContentProps) {
               <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/20 text-[10px]">FREE</Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Publish any website to <span className="text-blue-400 font-mono text-xs">yourproject.pages.dev</span> instantly — no hosting fees, forever free on Cloudflare's edge network.
+              Publish any website to <span className="text-blue-400 font-mono text-xs">yourproject.pages.dev</span> instantly — no hosting fees, forever free on Cloudflare&apos;s edge network.
             </p>
           </div>
         </div>

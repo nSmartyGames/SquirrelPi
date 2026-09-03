@@ -116,7 +116,10 @@ function WebsiteEditor({ html, palette, onChange, editorRef, onColumnAdd }: Webs
   const { styles, body } = useMemo(() => parseHtml(html), [html])
   const lastExternalRef = useRef(html)
   const stylesRef = useRef(styles)
-  stylesRef.current = styles
+
+  useEffect(() => {
+    stylesRef.current = styles
+  }, [styles])
 
   useEffect(() => {
     if (html !== lastExternalRef.current && editorRef.current) {
@@ -190,7 +193,9 @@ export default function SiteBuilder({ initialHtml, siteId, initialTitle, isPro =
   const [generatedHtml, setGeneratedHtml] = useState(initialHtml ?? '')
   const [consoleOpen, setConsoleOpen] = useState(true)
   const [displayMsgs, setDisplayMsgs] = useState<DisplayMsg[]>([])
-  const [claudeHistory, setClaudeHistory] = useState<ClaudeMsg[]>([])
+  const [claudeHistory, setClaudeHistory] = useState<ClaudeMsg[]>(
+    () => (initialHtml ? [{ role: 'assistant', content: initialHtml }] : [])
+  )
   const [consoleInput, setConsoleInput] = useState('')
   const [generating, setGenerating] = useState(false)
 
@@ -214,10 +219,6 @@ export default function SiteBuilder({ initialHtml, siteId, initialTitle, isPro =
   useEffect(() => {
     if (consoleOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [displayMsgs, consoleOpen])
-
-  useEffect(() => {
-    if (initialHtml) setClaudeHistory([{ role: 'assistant', content: initialHtml }])
-  }, [initialHtml])
 
   function insertSection() {
     if (!editorRef.current) return
