@@ -17,6 +17,7 @@ import {
   PenTool,
   Megaphone,
   Rocket,
+  RefreshCw,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -27,6 +28,7 @@ const navItems = [
   { label: 'About', href: '/', icon: Info, accent: false },
   { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag, accent: false },
   { label: 'Dashboard', href: '/dashboard', icon: Globe, accent: false },
+  { label: 'Sync products', href: '/dpstore/dashboard', icon: RefreshCw, accent: false },
   { label: 'My Stack', href: '/dashboard/purchases', icon: ShoppingCart, accent: false },
   { label: 'Site Builder', href: '/builder', icon: PenTool, accent: false },
   { label: 'Grow Biz Pro', href: '/grow-biz-pro', icon: Rocket, accent: 'gold' as const },
